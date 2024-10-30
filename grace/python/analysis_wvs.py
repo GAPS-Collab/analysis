@@ -80,7 +80,7 @@ with contextlib.redirect_stderr(io.StringIO()):
 
         reader.rewind()
         
-        for pack in tqdm.tqdm(reader, total=n_packets, file=sys.stdout, position=0):
+        for pack in tqdm(reader, total=n_packets, file=sys.stdout, position=0):
             ev = go.rust_api.events.TofEvent()
             new_ev = go.liftof.waveform_analysis(ev, settings)
             
