@@ -16,6 +16,6 @@ files = files[np.argsort(f_nums)]
 n_files = int(np.ceil(len(files)/args.N))
 
 for i, files_subset in enumerate([files[i:i+n_files] for i in range(0,len(files), n_files)]):
-    with open(f'intermediaries/set{i}.lst', 'w+') as out_file:
+    with open(f'../../intermediaries/set{i}.lst', 'w+') as out_file:
         for file in files_subset:
             out_file.write(f'{file}\n')
