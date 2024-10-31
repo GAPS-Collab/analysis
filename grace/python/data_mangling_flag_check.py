@@ -10,13 +10,14 @@ import go_pybindings as gop
 import re
 from glob import glob
 import os
+import argparse
 
 parser = argparse.ArgumentParser(prog = 'flag 16 check', description = 'returns a tuple containing (data mangling from wv, data mangling from flag)')
 
-parser.add_argument('path', help='path to run directory (e.g. /Volumes/gaps-ssd/134/134)')
-parser.add_argument('-s', '--settings', help='name of settings file by default uses run{n}.toml where n is the directory')
+parser.add_argument('--id')
 parser.add_argument('-c', required=True, help='path to calibrations dir')
 parser.add_argument('-p', help='path to paddle mapping.csv')
+parser.add_argument('-n', required=True, help='file list number to use i.e. setn.lst')
 
 args = parser.parse_args()
 
@@ -25,10 +26,8 @@ analysis_vals = {
     'mangling_wv': []
 }
 
-run_path = Path(args.path)
-files = np.array([str(f) for f in ((run_path.glob('*.tof.gaps')))])
-f_nums = [int(file.split('.')[0].split('_')[-1]) for file in files]
-files = files[np.argsort(f_nums)]
+with open(f'/home/gaps/userspace/grace/intermediaries/set{args.n}.lst') as in_file:
+    files = [f.strip() for f in in_file]
 
 paddle_map = {}
 with open(args.p) as in_file:
@@ -68,9 +67,7 @@ mangling_from_status = 0
 mangling_from_wv = 0
 
 for f in files:
-        reader = go.io.TofPacketReader(str(f), filter=go.io.PacketType.TofEvent)
-        settings = go.liftof.LiftofSettings()
-        settings = settings.from_file(args.settings)
+        reader = go.io.TofPacketReader(str(f), filter=go.io.TofPacketType.TofEvent)
 
         n_packets = 0
         for pack in reader:
@@ -124,7 +121,7 @@ for f in files:
 analysis_vals['mangling_flag'].append(mangling_from_status)
 analysis_vals['mangling_wv'].append(mangling_from_wv)
 
-with open(f'/home/gaps/userspace/grace/intermediaries/flag_check_{args.n}.txt', 'w+') as out_file:
+with open(f'/home/gaps/userspace/grace/intermediaries/flag_check_{args.id}_{args.n}.txt', 'w+') as out_file:
     vals = list(analysis_vals.keys())
     row = ''    
     for val in vals:
