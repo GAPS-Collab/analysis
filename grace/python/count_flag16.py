@@ -30,8 +30,8 @@ files = files[np.argsort(f_nums)]
 
 mangling_from_status = 0
 
-for f in files:
-        reader = go.io.TofPacketReader(str(f), filter=go.io.PacketType.TofEvent)
+for f in tqdm.tqdm(files):
+        reader = go.io.TofPacketReader(str(f), filter=go.io.TofPacketType.TofEvent)
 
         n_packets = 0
         for pack in reader:
@@ -39,7 +39,7 @@ for f in files:
 
         reader.rewind()
     
-        for pack in tqdm.tqdm(reader, total=n_packets, file=sys.stdout, position=0):
+        for pack in reader, total=n_packets, file=sys.stdout, position=0:
             ev = go.events.TofEvent()
 
             try:
