@@ -29,30 +29,31 @@ analysis_vals = {
     'met'               : [],
 }
 
-with contextlib.redirect_stderr(io.StringIO()):
-    for f in tqdm(files, desc="Processing files", unit="file", file=sys.stdout):
 
-        reader = go.io.TofPacketReader(str(f))
-        for pack in reader:
-            # heartbeat data is only stored in later runs
-            if pack.packet_type == go.io.PacketType.EVTBLDRHeartbeat:
-                hb = go.commands.EVTBLDRHeartbeat()
-                #hb = go.tof.monitoring.EVTBLDRHeartbeat()
-                try: 
-                    hb.from_tofpacket(pack)
-                    rb_disc = hb.n_rbe_discarded_tot
-                    rb_rec = hb.n_rbe_received_tot
-                    
-                    if rb_rec != 0:
-                        percent_disc = (rb_disc / rb_rec) * 100
-                        percent_disc = round(percent_disc, 1)
-                        if percent_disc != 100.0:
-                            analysis_vals['percent_dropped_hg'].append(percent_disc)
-                    
-                            analysis_vals['met'].append(hb.met_seconds)
-                except: continue
+for f in tqdm(files, desc="Processing files", unit="file"):
 
-with open(f'intermediaries/output_{args.id}.txt', 'w+') as out_file:
+    reader = go.io.TofPacketReader(str(f))
+    for pack in reader:
+        # heartbeat data is only stored in later runs
+        if pack.packet_type == go.io.PacketType.EVTBLDRHeartbeat:
+            hb = go.commands.EVTBLDRHeartbeat()
+            #hb = go.tof.monitoring.EVTBLDRHeartbeat()
+            try: 
+                hb.from_tofpacket(pack)
+                rb_disc = hb.n_rbe_discarded_tot
+                rb_rec = hb.n_rbe_received_tot
+                    
+                if rb_rec != 0:
+                    percent_disc = (rb_disc / rb_rec) * 100
+                    percent_disc = round(percent_disc, 1)
+                    if percent_disc != 100.0:
+                        analysis_vals['percent_dropped_hg'].append(percent_disc)
+                    
+                        analysis_vals['met'].append(hb.met_seconds)
+            except Exception as e:
+                print(f"Error: {e}")
+
+with open(f'/home/gaps/userspace/grace/intermediaries/hg_dropped_{args.id}.txt', 'w+') as out_file:
     vals = list(analysis_vals.keys())
     row = ''    
     for val in vals:
