@@ -19,7 +19,7 @@ parser.add_argument('-p', help='path to paddle mapping.csv')
 
 args = parser.parse_args()
 
-with open(f'intermediaries/set{args.n}.lst') as in_file:
+with open(f'../../intermediaries/set{args.n}.lst') as in_file:
     files = [f.strip() for f in in_file]
 
 if args.settings is None:
