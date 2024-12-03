@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-import tqdm
+from tqdm import tqdm
 import pathlib
 from pathlib import Path
 import io
@@ -36,7 +36,7 @@ for f in tqdm(files, desc="Processing files", unit="file"):
 
     reader = go.io.TofPacketReader(str(f))
     for pack in reader:
-        if pack.packet_type == go.io.PacketType.EVTBLDRHeartbeat:
+        if pack.packet_type == go.io.TofPacketType.EVTBLDRHeartbeat:
             hb = go.commands.EVTBLDRHeartbeat()
             try: 
                 hb.from_tofpacket(pack)
@@ -48,7 +48,7 @@ for f in tqdm(files, desc="Processing files", unit="file"):
             except Exception as e:
                 print(f"Error: {e}")
 
-with open({args.writdir}.txt, 'w+') as out_file:
+with open(f'{args.writdir}.txt', 'w+') as out_file:
     vals = list(analysis_vals.keys())
     row = ''    
     for val in vals:
