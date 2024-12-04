@@ -55,7 +55,7 @@ for f in tqdm.tqdm(files):
 
 analysis_vals['mangling_flag'].append(mangling_from_status)
 
-with open(f'/home/gaps/userspace/grace/intermediaries/count_flags_{args.id}.txt', 'w+') as out_file:
+with open(f'/home/tof/check-data/{args.id}/count_flags_{args.id}.txt', 'w+') as out_file:
     vals = list(analysis_vals.keys())
     row = ''    
     for val in vals:
