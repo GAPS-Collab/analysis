@@ -34,7 +34,7 @@ for f in tqdm(files, desc="Processing files", unit="file"):
 
     reader = go.io.TofPacketReader(str(f))
     for pack in reader:
-        if pack.packet_type == go.io.PacketType.MTBHeartbeat:
+        if pack.packet_type == go.io.TofPacketType.MTBHeartbeat:
             hb = go.commands.MTBHeartbeat()
             try: 
                 hb.from_tofpacket(pack)
