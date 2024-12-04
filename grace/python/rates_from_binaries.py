@@ -11,7 +11,9 @@ import re
 from glob import glob
 import os
 import argparse
-
+import matplotlib.pyplot as plt
+import charmingbeauty.layout as lo
+import polars as pl
 
 def mtb_rate_plot(data : list):
     """
@@ -26,7 +28,7 @@ def mtb_rate_plot(data : list):
                 obtained from MtbMoniData as well
     """
     fig = plt.figure(figsize=lo.FIGSIZE_A4_LANDSCAPE_HALF_HEIGHT)
-    plt.style.use('publication.rc')
+    # plt.style.use('publication.rc')
     ax = fig.gca()
     ax.set_ylabel('Hz', loc='top')
     ax.set_xlabel('MET [s] (gcu)')
@@ -64,8 +66,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # preparing outdir for plots
-    outdir = args.outdir
+    # preparing writdir for plots
+    outdir = args.writdir
     if not outdir:
         # create generic output directory
         outdir = 'plots'
