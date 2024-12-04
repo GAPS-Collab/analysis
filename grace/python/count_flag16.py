@@ -39,7 +39,7 @@ for f in tqdm.tqdm(files):
 
         reader.rewind()
     
-        for pack in reader, total=n_packets, file=sys.stdout, position=0:
+        for pack in reader:
             ev = go.events.TofEvent()
 
             try:
