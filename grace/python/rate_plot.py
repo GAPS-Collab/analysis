@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-import tqdm
+from tqdm import tqdm
 import pathlib
 from pathlib import Path
 import io
