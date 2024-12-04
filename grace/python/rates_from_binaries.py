@@ -27,8 +27,7 @@ def mtb_rate_plot(data : list):
                 Alternatively, this can be a list of polars dataframes
                 obtained from MtbMoniData as well
     """
-    fig = plt.figure(figsize=lo.FIGSIZE_A4_LANDSCAPE_HALF_HEIGHT)
-    # plt.style.use('publication.rc')
+    fig = plt.figure()
     ax = fig.gca()
     ax.set_ylabel('Hz', loc='top')
     ax.set_xlabel('MET [s] (gcu)')
@@ -56,7 +55,27 @@ def mtb_rate_plot(data : list):
     ax.set_title(f'MTB rates', loc='right')
     return fig
 
+def hg_dropped_plot(data: list):
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.set_ylabel(r'$%$ dropped HG hits')
+    ax.set_xlabel('met [s]')
+    ax.set_ylim((0, 100))
+    ax.minorticks_on()
+
+    times = np.array([j[0] for j in data])
+    times -= times[0]
+    times /= 1e9
+    hg_dropped = np.array([j[1] for j in data])
+
+    ax.scatter(times, hg_dropped)
+    ax.legend()
+    ax.set_title(r'$%$ dropped HG hits over time')
+    return fig
+
 if __name__ == '__main__':
+
+    plt.style.use('publication.rc')
 
     parser = argparse.ArgumentParser(description='MTB rate plot from telemetered binary files')
     parser.add_argument('--telemetry-dir', default='', help='A directory with telemetry binaries, as received from the telemetry stream')
@@ -77,6 +96,7 @@ if __name__ == '__main__':
 
     # extracting from binaries
     mtb_moni_series = []
+    hg_dropped = []
 
     files = go.io.get_telemetry_binaries(args.start_time, args.end_time, data_dir=args.telemetry_dir)
     for f in tqdm(files, desc='Reading files..'):
@@ -89,10 +109,27 @@ if __name__ == '__main__':
                     mtb_moni = go.tof.monitoring.MtbMoniData()
                     mtb_moni.from_tofpacket(tp)
                     mtb_moni_series.append((pack.header.gcutime,mtb_moni))
+                
+                if tp.packet_type == go.io.TofPacketType.EVTBLDRHeartbeat():
+                    hb = go.commands.EVTBLDRHeartbeat()
+                    try: 
+                        hb.from_tofpacket(pack)
+                        rb_disc = hb.n_rbe_discarded_tot
+                        rb_rec = hb.n_rbe_received_tot
 
-    fig = mtb_rate_plot(mtb_moni_series)
-    fig.savefig(outdir / 'mtb_rates.png')
+                        if rb_rec != 0:
+                            percent_disc = (rb_disc / rb_rec) * 100
+                            percent_disc = round(percent_disc, 1)
+                            if percent_disc != 100.0:
+                                hg_dropped.append(pack.header.gcutime, percent_disc)
 
+                    except Exception as e:
+                        print(f"Error: {e}")
 
+    fig0 = mtb_rate_plot(mtb_moni_series)
+    fig0.savefig(outdir / 'mtb_rates.png')
+
+    fig1 =  hg_dropped_plot(hg_dropped)
+    fig1.savefig(outdir/ 'hg_dropped.png')
 
 
