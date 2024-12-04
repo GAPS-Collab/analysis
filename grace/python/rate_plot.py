@@ -39,11 +39,11 @@ for f in tqdm(files, desc="Processing files", unit="file"):
             try: 
                 hb.from_tofpacket(pack)
                 analysis_vals['t_rate'].append(hb.trate)
-                analysis_vals['l_rate'].append(hb.l_rate)
+                analysis_vals['l_rate'].append(hb.lost_trate)
             except Exception as e:
                 print(f"Error: {e}")
 
-with open({args.writdir}.txt, 'w+') as out_file:
+with open(f'{args.writdir}.txt', 'w+') as out_file:
     vals = list(analysis_vals.keys())
     row = ''    
     for val in vals:
