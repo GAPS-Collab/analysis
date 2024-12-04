@@ -27,8 +27,8 @@ def mtb_rate_plot(data : list):
                 Alternatively, this can be a list of polars dataframes
                 obtained from MtbMoniData as well
     """
-    fig = plt.figure()
-    ax = fig.gca()
+    plt.style.use('publication.rc')
+    fig, ax = plt.subplots()
     ax.set_ylabel('Hz', loc='top')
     ax.set_xlabel('MET [s] (gcu)')
     if isinstance(data[0], pl.DataFrame):
@@ -56,9 +56,9 @@ def mtb_rate_plot(data : list):
     return fig
 
 def hg_dropped_plot(data: list):
-    fig = plt.figure()
-    ax = fig.gca()
-    ax.set_ylabel(r'$%$ dropped HG hits')
+    plt.style.use('publication.rc')
+    fig, ax = plt.subplots()
+    ax.set_ylabel(r'% dropped HG hits')
     ax.set_xlabel('met [s]')
     ax.set_ylim((0, 100))
     ax.minorticks_on()
@@ -68,14 +68,12 @@ def hg_dropped_plot(data: list):
     times /= 1e9
     hg_dropped = np.array([j[1] for j in data])
 
-    ax.scatter(times, hg_dropped)
-    ax.legend()
-    ax.set_title(r'$%$ dropped HG hits over time')
+    ax.scatter(times, hg_dropped, s = 0.1)
+    #ax.legend()
+    ax.set_title(r'% dropped HG hits over time')
     return fig
 
 if __name__ == '__main__':
-
-    plt.style.use('publication.rc')
 
     parser = argparse.ArgumentParser(description='MTB rate plot from telemetered binary files')
     parser.add_argument('--telemetry-dir', default='', help='A directory with telemetry binaries, as received from the telemetry stream')
@@ -110,10 +108,10 @@ if __name__ == '__main__':
                     mtb_moni.from_tofpacket(tp)
                     mtb_moni_series.append((pack.header.gcutime,mtb_moni))
                 
-                if tp.packet_type == go.io.TofPacketType.EVTBLDRHeartbeat():
+                if tp.packet_type == go.io.TofPacketType.EVTBLDRHeartbeat:
                     hb = go.commands.EVTBLDRHeartbeat()
                     try: 
-                        hb.from_tofpacket(pack)
+                        hb.from_tofpacket(tp)
                         rb_disc = hb.n_rbe_discarded_tot
                         rb_rec = hb.n_rbe_received_tot
 
@@ -121,7 +119,7 @@ if __name__ == '__main__':
                             percent_disc = (rb_disc / rb_rec) * 100
                             percent_disc = round(percent_disc, 1)
                             if percent_disc != 100.0:
-                                hg_dropped.append(pack.header.gcutime, percent_disc)
+                                hg_dropped.append((pack.header.gcutime, percent_disc))
 
                     except Exception as e:
                         print(f"Error: {e}")
