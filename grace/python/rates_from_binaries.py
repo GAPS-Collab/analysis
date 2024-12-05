@@ -45,7 +45,6 @@ def mtb_rate_plot(data : list):
         l_rates = np.array([j[1].lost_rate for j in data])
         times   = np.array([j[0] for j in data])
         times  -= times[0]
-        times   /= 1e9
     #print(times[l_rates < 500][-1])
     print(f'-> Avg MTB rate {rates.mean()}')
     print(f'-> Avg Lost rate {l_rates.mean()}')
@@ -73,6 +72,24 @@ def hg_dropped_plot(data: list):
     ax.set_title(r'\% dropped HG hits over time')
     return fig
 
+def timeout_plot(data: list):
+    plt.style.use('publication.rc')
+    fig, ax = plt.subplots()
+    ax.set_ylabel(r'\% timed out events')
+    ax.set_xlabel('met [s] (gcu)')
+    ax.set_ylim((0, 100))
+    ax.minorticks_on()
+
+    times = np.array([j[0] for j in data])
+    times -= times[0]
+    times /= 1e9
+    hg_dropped = np.array([j[1] for j in data])
+
+    ax.scatter(times, hg_dropped, s = 0.1)
+    #ax.legend()
+    ax.set_title(r'\% timed out events over time')
+    return fig
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='MTB rate plot from telemetered binary files')
@@ -95,6 +112,7 @@ if __name__ == '__main__':
     # extracting from binaries
     mtb_moni_series = []
     hg_dropped = []
+    te_evts = []
 
     files = go.io.get_telemetry_binaries(args.start_time, args.end_time, data_dir=args.telemetry_dir)
     for f in tqdm(files, desc='Reading files..'):
@@ -121,13 +139,21 @@ if __name__ == '__main__':
                             if percent_disc != 100.0:
                                 hg_dropped.append((pack.header.gcutime, percent_disc))
 
+                        nte = hb.n_timed_out
+                        nsend = hb.n_sent
+                        percent_te = (nte / nsend) * 100
+                        te_evts.append((pack.header.gcutime, percent_te))
+
                     except Exception as e:
                         print(f"Error: {e}")
 
     fig0 = mtb_rate_plot(mtb_moni_series)
     fig0.savefig(outdir / 'mtb_rates.png', dpi = 300)
 
-    fig1 =  hg_dropped_plot(hg_dropped)
+    fig1 = hg_dropped_plot(hg_dropped)
     fig1.savefig(outdir/ 'hg_dropped.png', dpi = 300)
+
+    fig2 = timeout_plot(te_evts)
+    fig2.savefig(outdir/ 'te_evts.png', dpi = 300)
 
 
