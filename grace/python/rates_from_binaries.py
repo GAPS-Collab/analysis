@@ -114,11 +114,16 @@ if __name__ == '__main__':
     hg_dropped = []
     te_evts = []
     num_mangled = 0
+    num_merged = 0
+    num_hg = 0
+    num_lg = 0
+    num_packets = 0
 
     files = go.io.get_telemetry_binaries(args.start_time, args.end_time, data_dir=args.telemetry_dir)
     for f in tqdm(files, desc='Reading files..'):
         treader = go.io.TelemetryPacketReader(str(f))
         for pack in treader:
+            num_packets += 1
 
             if int(pack.header.packet_type) in [90, 190, 191, 192]:
                 ev = go.events.MergedEvent()
@@ -126,6 +131,14 @@ if __name__ == '__main__':
                 status = ev.tof.status
                 if int(status) == 16:
                     num_mangled += 1
+
+                num_merged += 1
+
+                nlg = ev.tof.trigger_hits
+                num_lg += len(nlg)
+
+                nhg = ev.tof.hits
+                num_hg += len(nhg)
 
             if pack.header.packet_type == go.io.TelemetryPacketType.AnyTofHK: 
                 tp = go.io.TofPacket()
@@ -167,3 +180,9 @@ if __name__ == '__main__':
     fig2.savefig(outdir/ 'te_evts.png', dpi = 300)
 
     print(f'-> Num. events with data mangling: {num_mangled}')
+    print(f'-> Read {num_packets} telemetry packets for this run!')
+    print(f'-> Found {num_merged} merged event packets for this run!')
+    print(f'-> Found {num_hg} HG hits for this run!')
+    print(f'-> Found {num_lg} LG hits for this run!')
+
+
