@@ -113,14 +113,24 @@ if __name__ == '__main__':
     mtb_moni_series = []
     hg_dropped = []
     te_evts = []
+    num_mangled = 0
 
     files = go.io.get_telemetry_binaries(args.start_time, args.end_time, data_dir=args.telemetry_dir)
     for f in tqdm(files, desc='Reading files..'):
         treader = go.io.TelemetryPacketReader(str(f))
         for pack in treader:
+
+            if int(pack.header.packet_type) in 90, 190, 191, 192:
+                ev = go.events.MergedEvent()
+                ev.from_telemetrypacket(pack)
+                status = ev.mastertriggerevent.status
+                if int(status) == 16:
+                    num_mangled += 1
+
             if pack.header.packet_type == go.io.TelemetryPacketType.AnyTofHK: 
                 tp = go.io.TofPacket()
                 tp.from_bytestream(pack.payload, 0)
+
                 if tp.packet_type == go.io.TofPacketType.MonitorMtb:
                     mtb_moni = go.tof.monitoring.MtbMoniData()
                     mtb_moni.from_tofpacket(tp)
@@ -156,4 +166,4 @@ if __name__ == '__main__':
     fig2 = timeout_plot(te_evts)
     fig2.savefig(outdir/ 'te_evts.png', dpi = 300)
 
-
+    print(f'-> Num. events with data mangling: {num_mangled}')
