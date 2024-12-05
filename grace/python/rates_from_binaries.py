@@ -58,8 +58,8 @@ def mtb_rate_plot(data : list):
 def hg_dropped_plot(data: list):
     plt.style.use('publication.rc')
     fig, ax = plt.subplots()
-    ax.set_ylabel(r'% dropped HG hits')
-    ax.set_xlabel('met [s]')
+    ax.set_ylabel(r'\% dropped HG hits')
+    ax.set_xlabel('met [s] (gcu)')
     ax.set_ylim((0, 100))
     ax.minorticks_on()
 
@@ -70,7 +70,7 @@ def hg_dropped_plot(data: list):
 
     ax.scatter(times, hg_dropped, s = 0.1)
     #ax.legend()
-    ax.set_title(r'% dropped HG hits over time')
+    ax.set_title(r'\% dropped HG hits over time')
     return fig
 
 if __name__ == '__main__':
@@ -125,9 +125,9 @@ if __name__ == '__main__':
                         print(f"Error: {e}")
 
     fig0 = mtb_rate_plot(mtb_moni_series)
-    fig0.savefig(outdir / 'mtb_rates.png')
+    fig0.savefig(outdir / 'mtb_rates.png', dpi = 300)
 
     fig1 =  hg_dropped_plot(hg_dropped)
-    fig1.savefig(outdir/ 'hg_dropped.png')
+    fig1.savefig(outdir/ 'hg_dropped.png', dpi = 300)
 
 
