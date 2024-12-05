@@ -120,10 +120,10 @@ if __name__ == '__main__':
         treader = go.io.TelemetryPacketReader(str(f))
         for pack in treader:
 
-            if int(pack.header.packet_type) in 90, 190, 191, 192:
+            if int(pack.header.packet_type) in [90, 190, 191, 192]:
                 ev = go.events.MergedEvent()
                 ev.from_telemetrypacket(pack)
-                status = ev.mastertriggerevent.status
+                status = ev.tof.status
                 if int(status) == 16:
                     num_mangled += 1
 
