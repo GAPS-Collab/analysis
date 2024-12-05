@@ -179,10 +179,12 @@ if __name__ == '__main__':
     fig2 = timeout_plot(te_evts)
     fig2.savefig(outdir/ 'te_evts.png', dpi = 300)
 
+    hit_ratio = num_hg / num_lg
+    hit_ratio = round(hit_ratio, 2)
+
     print(f'-> Num. events with data mangling: {num_mangled}')
     print(f'-> Read {num_packets} telemetry packets for this run!')
     print(f'-> Found {num_merged} merged event packets for this run!')
-    print(f'-> Found {num_hg} HG hits for this run!')
-    print(f'-> Found {num_lg} LG hits for this run!')
+    print(f'-> Found a ratio of {num_hg}/{num_lg} = {hit_ratio} HG hits to LG hits for this run!')
 
 
