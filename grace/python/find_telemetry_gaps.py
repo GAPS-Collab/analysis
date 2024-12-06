@@ -1,8 +1,9 @@
 import gaps_online as go
 from tqdm import tqdm
+import argparse
+from pathlib import Path
 
 
-GAP_THRESHOLD = 5
 
 if __name__ == '__main__':
 
@@ -13,8 +14,11 @@ if __name__ == '__main__':
     parser.add_argument('-s','--start-time', type=int, default=-1, help='The run start time, e.g. as taken from the elog')
     parser.add_argument('-e','--end-time',type=int, default=-1, help='The run end time, e.g. as taken from the elog')
     parser.add_argument('-w','--writdir', help='Outdir to save plots', default='')
+    parser.add_argument('-t', '--threshold', type = int, default = 5, help = 'The amount of time defined to constitute a gap in data')
 
     args = parser.parse_args()
+
+    GAP_THRESHOLD = args.threshold
 
     # preparing writdir for plots
     outdir = args.writdir
