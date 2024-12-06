@@ -3,18 +3,18 @@ from pathlib import Path
 import matplotlib.pyplot as plt 
 from tqdm import tqdm
 import numpy as np
+import argparse
 
 def mte_ch_rec_plot(data: list):
     plt.style.use('publication.rc')
     fig, ax = plt.subplots()
     ax.set_ylabel('Len. MTE Receiver')
     ax.set_xlabel('met [s] (gcu)')
-    ax.set_ylim((0, 100))
+    #ax.set_ylim((0, 100))
     ax.minorticks_on()
 
     times = np.array([j[0] for j in data])
     times -= times[0]
-    times /= 1e9
     hg_dropped = np.array([j[1] for j in data])
 
     ax.scatter(times, hg_dropped, s = 0.1)
@@ -27,12 +27,11 @@ def rbe_ch_rec_plot(data: list):
     fig, ax = plt.subplots()
     ax.set_ylabel('Len. RBE Receiver')
     ax.set_xlabel('met [s] (gcu)')
-    ax.set_ylim((0, 100))
+    #ax.set_ylim((0, 100))
     ax.minorticks_on()
 
     times = np.array([j[0] for j in data])
     times -= times[0]
-    times /= 1e9
     hg_dropped = np.array([j[1] for j in data])
 
     ax.scatter(times, hg_dropped, s = 0.1)
@@ -45,12 +44,11 @@ def mtb_evt_queue_plot(data: list):
     fig, ax = plt.subplots()
     ax.set_ylabel('Len. MTB Event Queue')
     ax.set_xlabel('met [s] (gcu)')
-    ax.set_ylim((0, 100))
+    #ax.set_ylim((0, 100))
     ax.minorticks_on()
 
     times = np.array([j[0] for j in data])
     times -= times[0]
-    times /= 1e9
     hg_dropped = np.array([j[1] for j in data])
 
     ax.scatter(times, hg_dropped, s = 0.1)
@@ -103,7 +101,7 @@ if __name__ == '__main__':
                     except Exception as e:
                         print(f"Error: {e}")
 
-                if tp.packet_type = go.io.TofPacketType.MTBHeartbeat:
+                if tp.packet_type == go.io.TofPacketType.MTBHeartbeat:
                     hb = go.commands.MTBHeartbeat()
                     try:
                         hb.from_tofpacket(tp)
@@ -112,10 +110,10 @@ if __name__ == '__main__':
                     except Exception as e:
                         print(f"Error: {e}")
 
-    fig0 = mte_ch_rec_plot(mte_rec)
+    fig0 = mte_ch_rec_plot(ch_len_mte_rec)
     fig0.savefig(outdir / f'{args.id}mte_rec_ch.png', dpi = 300)
 
-    fig1 = rbe_ch_rec_plot(rb_rec)
+    fig1 = rbe_ch_rec_plot(ch_len_rbe_rec)
     fig1.savefig(outdir/ f'{args.id}rbe_rec_ch.png', dpi = 300)
 
     fig2 = mtb_evt_queue_plot(mtb_evq)
