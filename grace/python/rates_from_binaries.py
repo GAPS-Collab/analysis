@@ -90,6 +90,23 @@ def timeout_plot(data: list):
     ax.set_title(r'\% timed out events over time')
     return fig
 
+def merged_event_rate_plot(data: list):
+    plt.style.use('publication.rc')
+    fig, ax = plt.subplots()
+    ax.set_ylabel(r'Merged Event Rate')
+    ax.set_xlabel('met [s] (gcu)')
+    #ax.set_ylim((0, 100))
+    ax.minorticks_on()
+
+    times = np.array([j[0] for j in data])
+    times -= times[0]
+    #times /= 1e9
+    rate = np.array([j[1].rate for j in data])
+
+    ax.scatter(times, rate, s = 0.1)
+    #ax.legend()
+    ax.set_title(r'Merged Event Rate over time')
+    return fig
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='MTB rate plot from telemetered binary files')
@@ -118,6 +135,8 @@ if __name__ == '__main__':
     num_hg = 0
     num_lg = 0
     num_packets = 0
+    merged_events = []
+    undecodables = 0
 
     files = go.io.get_telemetry_binaries(args.start_time, args.end_time, data_dir=args.telemetry_dir)
     for f in tqdm(files, desc='Reading files..'):
@@ -126,20 +145,25 @@ if __name__ == '__main__':
             num_packets += 1
 
             if int(pack.header.packet_type) in [90, 190, 191, 192]:
-                ev = go.events.MergedEvent()
-                ev.from_telemetrypacket(pack)
-                status = ev.tof.status
-                if int(status) == 16:
-                    num_mangled += 1
+                try:
+                    ev = go.events.MergedEvent()
+                    ev.from_telemetrypacket(pack)
+                    status = ev.tof.status
+                    merged_events.append((pack.header.gcutime, ev))
+                    if int(status) == 16:
+                        num_mangled += 1
 
-                num_merged += 1
+                    num_merged += 1
 
-                nlg = ev.tof.trigger_hits
-                num_lg += len(nlg)
+                    nlg = ev.tof.trigger_hits
+                    num_lg += len(nlg)
 
-                nhg = ev.tof.hits
-                num_hg += len(nhg)
+                    nhg = ev.tof.hits
+                    num_hg += len(nhg)
 
+                except Exception as e:
+                    print(f"Error: {e}")
+                    undecodables +=1 
             if pack.header.packet_type == go.io.TelemetryPacketType.AnyTofHK: 
                 tp = go.io.TofPacket()
                 tp.from_bytestream(pack.payload, 0)
@@ -178,13 +202,19 @@ if __name__ == '__main__':
 
     fig2 = timeout_plot(te_evts)
     fig2.savefig(outdir/ 'te_evts.png', dpi = 300)
-
-    hit_ratio = num_hg / num_lg
-    hit_ratio = round(hit_ratio, 2)
+    
+    fig3 = merged_event_rate_plot(merged_events)
+    fig3.savefig(outdir/ 'merged_evt_rate.png', dpi = 300)
+    try:
+        hit_ratio = num_hg / num_lg
+        hit_ratio = round(hit_ratio, 2)
+    except Exception as e:
+        hit_ratio = 0
+        print(f"Error: {e}")
 
     print(f'-> Num. events with data mangling: {num_mangled}')
     print(f'-> Read {num_packets} telemetry packets for this run!')
     print(f'-> Found {num_merged} merged event packets for this run!')
     print(f'-> Found a ratio of {num_hg}/{num_lg} = {hit_ratio} HG hits to LG hits for this run!')
-
-
+    print(f'-> {undecodables} merged events failed to be unpacked')
+    
