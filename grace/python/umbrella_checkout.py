@@ -111,11 +111,9 @@ umbrella_pids  = []
 # bad paddles (recon pk heihgt == 0)
 bad_pids       = []
 paddles = go.db.get_umbrella_paddles()
-paddles = paddles.extend(go.db.get_cube_paddles())
-paddles = paddles.extend(go.db.get_cortina_paddles())
-#active_rb = [1, 2, 4, 5, 6,7,8,9, 11, 16, 17,18, 19, 20, 22, 25,26, 28, 30, 33,34, 36, 39, 40, 41, 42, 44, 46]
-#for rb in active_rb:
-    #paddles.extend(go.db.Paddle.objects.filter(rb_id=rb))
+active_rb = [1, 2, 4, 5, 6,7,8,9, 11, 16, 17,18, 19, 20, 22, 25,26, 28, 30, 33,34, 36, 39, 40, 41, 42, 44, 46]
+for rb in active_rb:
+    paddles.extend(go.db.Paddle.objects.filter(rb_id=rb))
 
 for pdl in tqdm.tqdm(paddles, desc="Creating paddle dicts...", total=len(paddles)):
     uid = pdl.rb_id*100 + pdl.rb_chA 
@@ -226,19 +224,35 @@ if __name__ == '__main__':
                 if wf.rb_channel_b == 8:
                     continue
                 nwfs_cali += 1
-                uid = wf.rb_id*100 + wf.rb_channel_b + 1
+                uid = wf.rb_id*100 + wf.rb_channel_a + 1
                 pid = rbch_pid_dict[uid]
                 ocu_paddles.append(pid)
                 if not uid in av_wf:
-                    av_wf[uid] = [1,wf.voltages_b]
+                    av_wf[uid] = [1,wf.voltages_a]
                 else:
                     av_wf[uid][0] += 1
-                    av_wf[uid][1] += wf.voltages_b
+                    av_wf[uid][1] += wf.voltages_a
                 if not uid in baselines:
-                    baselines [uid] = (pid,[baseline(wf.voltages_b)])
+                    baselines [uid] = (pid,[baseline(wf.voltages_a)])
                 else:
-                    baselines[uid][1].append(baseline(wf.voltages_b)) 
+                    baselines[uid][1].append(baseline(wf.voltages_a)) 
             nhit_distr.append(len(ev.hits))
+
+                uid = wf.rb_id*100 + wf.rb_channel_b + 1
+                    pid = rbch_pid_dict[uid]
+                    ocu_paddles.append(pid)
+                    if not uid in av_wf:
+                        av_wf[uid] = [1,wf.voltages_b]
+                    else:
+                        av_wf[uid][0] += 1
+                        av_wf[uid][1] += wf.voltages_b
+                    if not uid in baselines:
+                        baselines [uid] = (pid,[baseline(wf.voltages_b)])
+                    else:
+                        baselines[uid][1].append(baseline(wf.voltages_b)) 
+
+
+
             for h in ev.hits:
                 charge_ab[h.paddle_id]['a'].append(h.charge_a)
                 charge_ab[h.paddle_id]['b'].append(h.charge_b)
@@ -297,7 +311,7 @@ if __name__ == '__main__':
 
     # individual paddles
     for k in tqdm.tqdm(charge_ab.keys(), total=len(charge_ab.keys()), desc="Plotting charge correlations..."):
-        '''
+        
         fig_cab = plt.figure(figsize=lo.FIGSIZE_A4_SQUARE)
         ax = fig_cab.gca()
         h2 = d.factory.hist2d((charge_ab[k]['a'], charge_ab[k]['b']),(np.linspace(0,800,70), np.linspace(0,800,70)))
@@ -312,7 +326,6 @@ if __name__ == '__main__':
         plt.close()
         del ax
         del fig_cab
-        '''
         #basebins = np.linspace(-5,5,70)
         bins = 70
         fig  = plt.figure(figsize=lo.FIGSIZE_A4_LANDSCAPE)
