@@ -130,6 +130,7 @@ if __name__ == '__main__':
     mtb_moni_series = []
     hg_dropped = []
     te_evts = []
+    num_mangled_flag = 0
     num_mangled = 0
     num_merged = 0
     num_hg = 0
@@ -137,6 +138,7 @@ if __name__ == '__main__':
     num_packets = 0
     merged_events = []
     undecodables = 0
+    num_evts = 0
 
     files = go.io.get_telemetry_binaries(args.start_time, args.end_time, data_dir=args.telemetry_dir)
     for f in tqdm(files, desc='Reading files..'):
@@ -145,25 +147,38 @@ if __name__ == '__main__':
             num_packets += 1
 
             if int(pack.header.packet_type) in [90, 190, 191, 192]:
-                try:
-                    ev = go.events.MergedEvent()
-                    ev.from_telemetrypacket(pack)
-                    status = ev.tof.status
-                    merged_events.append((pack.header.gcutime, ev))
-                    if int(status) == 16:
-                        num_mangled += 1
+                num_merged += 1
+                if int(pack.header.packet_type) in [90, 190, 191]:
+                    try:
+                        ev = go.events.MergedEvent()
+                        ev.from_telemetrypacket(pack)
+                        num_evts +=1 
+                        status = ev.tof.status
+                        merged_events.append((pack.header.gcutime, ev))
+                        if int(status) == 16:
+                            num_mangled_flag += 1
 
-                    num_merged += 1
+                        nlg = ev.tof.trigger_hits
+                        num_lg += len(nlg)
 
-                    nlg = ev.tof.trigger_hits
-                    num_lg += len(nlg)
+                        nhg = ev.tof.hits
+                        num_hg += len(nhg)
 
-                    nhg = ev.tof.hits
-                    num_hg += len(nhg)
+                        hits = ev.tof.hits
+                        mangled_event_flag = False
+                        for x in range(len(hits)):
+                            peak1 = hits[x].peak_a
+                            peak2 = hits[x].peak_b
 
-                except Exception as e:
-                    print(f"Error: {e}")
-                    undecodables +=1 
+                            if peak1 > 200 or peak1 < -200 or peak2 > 200 or peak2 < -200:
+                                if not mangled_event_flag:
+                                    num_mangled += 1
+                                    mangled_event_flag = True
+                                break
+
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        undecodables +=1 
             if pack.header.packet_type == go.io.TelemetryPacketType.AnyTofHK: 
                 tp = go.io.TofPacket()
                 tp.from_bytestream(pack.payload, 0)
@@ -203,16 +218,22 @@ if __name__ == '__main__':
     fig2 = timeout_plot(te_evts)
     fig2.savefig(outdir/ 'te_evts.png', dpi = 300)
     
-    fig3 = merged_event_rate_plot(merged_events)
-    fig3.savefig(outdir/ 'merged_evt_rate.png', dpi = 300)
+    #fig3 = merged_event_rate_plot(merged_events)
+    #fig3.savefig(outdir/ 'merged_evt_rate.png', dpi = 300)
     try:
         hit_ratio = num_hg / num_lg
         hit_ratio = round(hit_ratio, 2)
+        mangled_ratio = num_mangled / num_evts
+        mangled_ratio = round(mangled_ratio,2)
+        mangled_percent = mangled_ratio * 100
     except Exception as e:
         hit_ratio = 0
         print(f"Error: {e}")
 
-    print(f'-> Num. events with data mangling: {num_mangled}')
+
+    print(f'-> Found {num_evts} events!')
+    print(f'-> Found {num_mangled} events with data mangling: {mangled_percent} %')
+    print(f'-> Num. events with data mangling flag: {num_mangled_flag}')
     print(f'-> Read {num_packets} telemetry packets for this run!')
     print(f'-> Found {num_merged} merged event packets for this run!')
     print(f'-> Found a ratio of {num_hg}/{num_lg} = {hit_ratio} HG hits to LG hits for this run!')
