@@ -154,7 +154,7 @@ if __name__ == '__main__':
                         ev.from_telemetrypacket(pack)
                         num_evts +=1 
                         status = ev.tof.status
-                        merged_events.append((pack.header.gcutime, ev))
+                        #merged_events.append((pack.header.gcutime, ev))
                         if int(status) == 16:
                             num_mangled_flag += 1
 
@@ -164,11 +164,10 @@ if __name__ == '__main__':
                         nhg = ev.tof.hits
                         num_hg += len(nhg)
 
-                        hits = ev.tof.hits
                         mangled_event_flag = False
-                        for x in range(len(hits)):
-                            peak1 = hits[x].peak_a
-                            peak2 = hits[x].peak_b
+                        for x in range(len(nlg)):
+                            peak1 = nlg[x].peak_a
+                            peak2 = nlg[x].peak_b
 
                             if peak1 > 200 or peak1 < -200 or peak2 > 200 or peak2 < -200:
                                 if not mangled_event_flag:
