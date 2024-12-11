@@ -165,11 +165,11 @@ if __name__ == '__main__':
                         num_hg += len(nhg)
 
                         mangled_event_flag = False
-                        for x in range(len(nlg)):
-                            peak1 = nlg[x].peak_a
-                            peak2 = nlg[x].peak_b
+                        for x in range(len(nhg)):
+                            peak1 = nhg[x].peak_a
+                            peak2 = nhg[x].peak_b
 
-                            if peak1 > 200 or peak1 < -200 or peak2 > 200 or peak2 < -200:
+                            if peak1 > 250 or peak1 < -250 or peak2 > 250 or peak2 < -250:
                                 if not mangled_event_flag:
                                     num_mangled += 1
                                     mangled_event_flag = True
