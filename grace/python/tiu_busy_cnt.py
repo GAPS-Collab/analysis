@@ -16,16 +16,17 @@ import charmingbeauty.layout as lo
 import polars as pl
 
 def plot_busy(data):
-    fixed_num_bins = 15
-    bin_width = 18 / fixed_num_bins
-    bin_edges = np.linspace(-bin_width / 2, 18 + bin_width / 2, fixed_num_bins + 1)
+    #fixed_num_bins = 15
+    #bin_width = 18 / fixed_num_bins
+    #bin_edges = np.linspace(-bin_width / 2, 18 + bin_width / 2, fixed_num_bins + 1)
     data = np.array(data)
     plt.style.use('publication.rc')
     fig, ax = plt.subplots()
     ax.set_ylabel('n')
-    ax.set_xlabel('tiu busy counts [10 nsec clk cycles]')
-    ax.set_title('tiu busy count distribution')
-    ax.hist(data, bins=bin_edges, histtype = 'step', align = 'mid')
+    ax.set_xlabel('tiu busy counts [1 nsec clk cycles]')
+    ax.set_xlim((0, data.max() + 100 ))
+    ax.set_title('3.1.9 tiu busy count distribution')
+    ax.hist(data, histtype = 'step', bins = 20, align = 'mid')
     print(f"--> Avg tiu lost count {data.mean()}")
     return fig
 
