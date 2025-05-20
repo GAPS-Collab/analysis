@@ -13,8 +13,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    
-    
     runs  = { args.run_id : {'start' : args.start_time , 'end' : args.end_time, 'data_dir' : Path(args.data_dir)}}
 
     data = go.run.load_run_from_telemetry(**runs[args.run_id]) 
