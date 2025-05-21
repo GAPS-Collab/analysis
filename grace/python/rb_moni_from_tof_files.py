@@ -11,7 +11,7 @@ from glob import glob
 import os
 import argparse
 
-parser = argparse.ArgumentParser(prog = 'get RB moni'. description = 'get and extract info from RBMoniData in .tof.gaps files')
+parser = argparse.ArgumentParser(prog = 'get RB moni', description = 'get and extract info from RBMoniData in .tof.gaps files')
 parser.add_argument('path')
 
 args = parser.parse_args()
@@ -25,7 +25,7 @@ for f in tqdm(files):
     reader = go.io.TofPacketReader(str(f))
     for pack in reader: 
         if int(pack.packet_type) == 100:
-            rbmoni = go.monitoring.RBMoniData()
+            rbmoni = go.tof.monitoring.RBMoniData()
             rate = rbmoni.rate
 
             
