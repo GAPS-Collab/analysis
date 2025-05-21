@@ -1,6 +1,4 @@
-Hi, 
+This repository is to concentrate analysis tools for raw and reconstructed data. I created it to easily share file updates across machines during analysis of McMurdo data, but I hope others use it as well. 
+Scripts rely on working versions of gaps-online-software or SimpleDet. I use Rye to organize python packages, but that is up to personal choice. 
 
-I made this repository so that I can store and easily update and use analysis scripts that I have been working with that are seperate from the online software and stuff like that across computers, and I hope that other people can use it too! 
-
-
--- Grace
+Please create your own folder to store your scripts, and do not store them all in /grace. Thank you! 
