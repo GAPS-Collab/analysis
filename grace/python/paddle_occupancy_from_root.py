@@ -4,11 +4,9 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import tqdm
-import charmingbeauty as cb
-import charmingbeauty.layout as lo
 from pathlib import Path
-import dashi as d
 import argparse
+import dashi as d
 
 matplotlib.use('agg')
 
@@ -19,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('-id','--data_id', type=str, default ='_', help='the data id will go at the beginning of output files. the default is "_"')
     args = parser.parse_args()
 
-    cb.set_style_present()
+    #cb.set_style_present()
     d.visual()
 
     files = Path(f'{args.data_dir}').glob('*.root')
@@ -31,7 +29,7 @@ if __name__ == '__main__':
     for f in tqdm.tqdm(files, total=len(files), desc='Creating plot...'):
         f = up.open(f)
         event_pids = []
-        vids = f.get('TreeRec').get('Rec').get('hitseries/hitseries_.volumeid').array()
+        vids = f.get('TreeRec').get('Rec').get('hitseries_').get('hitseries_.volume_id_').array()
         for ev in vids:
             pids = [vid_hid_map[k] for k in ev if k < 200000000]
             event_pids.extend(pids)
@@ -50,10 +48,11 @@ if __name__ == '__main__':
             occu[k] = np.nan
 
     #plot paddle occupancy,
-    fig = plt.figure(figsize=lo.FIGSIZE_A4_LANDSCAPE_HALF_HEIGHT)
+    #fig = plt.figure(figsize=lo.FIGSIZE_A4_LANDSCAPE_HALF_HEIGHT)
+    fig = plt.figure()
     ax  = fig.gca()
     pid_hist.line(filled=True, alpha=0.4, color='tab:blue')
-    cb.visual.adjust_minor_ticks(ax)
+    #cb.visual.adjust_minor_ticks(ax)
     ax.set_ylim(bottom=0)
     fig.savefig('pid-hist-reco.png')
 
