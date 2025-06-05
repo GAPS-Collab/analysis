@@ -15,14 +15,14 @@ matplotlib.use('agg')
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Paddle occupancy graphic plot from root files (reco or MC)')
-    parser.add_argument('-dir', '--data-dir', type=str, default = '', help = 'A directory with .root files from MC or Reconstruction')
-    parser.add_argument('-id', --'data-id', type=str, default ='_', help='the data id will go at the beginning of output files. the default is "_"')
+    parser.add_argument('-dir', '--data_dir', type=str, default = '', help = 'A directory with .root files from MC or Reconstruction')
+    parser.add_argument('-id','--data_id', type=str, default ='_', help='the data id will go at the beginning of output files. the default is "_"')
     args = parser.parse_args()
 
     cb.set_style_present()
     d.visual()
 
-    files = Path(f'{args.dir}').glob('*.root')
+    files = Path(f'{args.data_dir}').glob('*.root')
     files = [k for k in files]
     vid_hid_map = go.db.get_vid_hid_map()
 
@@ -59,8 +59,8 @@ if __name__ == '__main__':
 
     cm = matplotlib.colormaps['seismic']
     fig, ax = go.tof.visual.tof_projection_xy(occu, cmap=cm)
-    fig.savefig(f'{args.id}_occu-xy.png')
+    fig.savefig(f'{args.data_id}_occu-xy.png')
     fig, ax = go.tof.visual.unroll_cbe_sides(paddle_occupancy=occu, cmap=cm)
-    fig.savefig(f'{args.id}_occu-cbe.png')
+    fig.savefig(f'{args.data_id}_occu-cbe.png')
     fig, ax = go.tof.visual.unroll_cor(paddle_occupancy=occu, cmap=cm)
-    fig.savefig(f'{args.id}_occu-cor.png')
+    fig.savefig(f'{args.data_id}_occu-cor.png')
