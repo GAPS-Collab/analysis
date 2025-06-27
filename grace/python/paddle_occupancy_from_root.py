@@ -36,16 +36,31 @@ if __name__ == '__main__':
             for pid in pids:
                 occu[pid] += 1
         pid_hist.fill(np.array(event_pids))
+        
+        max_occu = max(occu.values())
+        
+        ## want to consider raw number of hits, not normalized
+        #try:
+            #for k in occu:
+                #occu[k] = occu[k] / max_occu
+                #if occu[k] == 0:
+                    #occu[k] = np.nan
+        #except ZeroDivisionError:
+        # All values were 0, so nothing to normalize — set all to np.nan
+            #for k in occu:
+                #occu[k] = np.nan
+
+
 
     #normalize the occupancy,
-    max_occu = 0
-    for k in occu:
-        if occu[k] > max_occu:
-            max_occu = occu[k]
-    for k in occu:
-        occu[k] = occu[k]/max_occu
-        if occu[k] == 0:
-            occu[k] = np.nan
+    #max_occu = 0
+    #for k in occu:
+        #if occu[k] > max_occu:
+            #max_occu = occu[k]
+    #for k in occu:
+        #occu[k] = occu[k]/max_occu
+        #if occu[k] == 0:
+            #occu[k] = np.nan
 
     #plot paddle occupancy,
     #fig = plt.figure(figsize=lo.FIGSIZE_A4_LANDSCAPE_HALF_HEIGHT)
