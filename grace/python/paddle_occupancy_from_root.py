@@ -3,20 +3,24 @@ import uproot as up
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import tqdm
 from pathlib import Path
 import argparse
 import dashi as d
+from gaps_online import db
 
 matplotlib.use('agg')
 
 def tof_projection_xy(paddle_occupancy = {}, 
                       event            = None,
-                      cmap             = matplotlib.colormaps['gnuplot2'],
+                      cmap             = 'gnuplot2',
                       paddle_style     = {'edgecolor' : 'w', 'lw' : 0.4},
                       show_cbar        = True,
                       overlay_panels   = False,
                       indicate_empty   = ''):
+    if isinstance(cmap, str):
+        cmap = cm.get_cmap(cmap)
     """
 
     # Keyword Arguments:
@@ -158,7 +162,7 @@ if __name__ == '__main__':
     fig.savefig(f'{args.data_id}_pid_hist_reco.png')
 
     cm = matplotlib.colormaps['gnuplot2']
-    fig, ax = tof_projection_xy(occu, cmap=cm)
+    fig, ax = tof_projection_xy(occu, cmap='gnuplot2')
     fig.savefig(f'{args.data_id}_12pps.pdf')
     fig, ax = go.tof.visual.unroll_cbe_sides(paddle_occupancy=occu, cmap=cm)
     fig.savefig(f'{args.data_id}_8pps_1pps.pdf')
