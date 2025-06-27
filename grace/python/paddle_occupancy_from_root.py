@@ -161,10 +161,11 @@ if __name__ == '__main__':
     ax.set_ylim(bottom=0)
     fig.savefig(f'{args.data_id}_pid_hist_reco.png')
 
-    cm = matplotlib.colormaps['gnuplot2']
-    fig, ax = tof_projection_xy(occu, cmap='gnuplot2')
+    #cm = matplotlib.colormaps['gnuplot2']
+    mapping = 'gnuplot2'
+    fig, ax = tof_projection_xy(occu, cmap=mapping)
     fig.savefig(f'{args.data_id}_12pps.pdf')
-    fig, ax = go.tof.visual.unroll_cbe_sides(paddle_occupancy=occu, cmap=cm)
+    fig, ax = go.tof.visual.unroll_cbe_sides(paddle_occupancy=occu, cmap=mapping)
     fig.savefig(f'{args.data_id}_8pps_1pps.pdf')
-    fig, ax = go.tof.visual.unroll_cor(paddle_occupancy=occu, cmap=cm)
+    fig, ax = go.tof.visual.unroll_cor(paddle_occupancy=occu, cmap=mapping)
     fig.savefig(f'{args.data_id}_10pps_3pps.pdf')
