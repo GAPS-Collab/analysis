@@ -19,6 +19,7 @@ if __name__ == '__main__':
     tofevents = [k.tof for k in data['events']]
     occu = go.tof.analysis.create_occupancy_dict(events = tofevents)
     
+    print(occu[0])
     cm = matplotlib.colormaps['gnuplot2']
 
     fig1, ax1 = go.tof.visual.tof_projection_xy(occu, cmap=cm)

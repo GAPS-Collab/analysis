@@ -63,7 +63,7 @@ def tof_projection_xy(paddle_occupancy = {},
     def get_color(val):
         return cmap((val - vmin) / (vmax - vmin))
 
-    def draw_panel(ax, paddles, label):
+    def draw_panel(ax, paddles, label, xylim=(-100, 100)):
         for pdl in paddles:
             if paddle_occupancy:
                 val = paddle_occupancy.get(pdl.paddle_id, 0)
@@ -71,15 +71,15 @@ def tof_projection_xy(paddle_occupancy = {},
                 ax.add_patch(pdl.draw_xy(fill=True, edgecolor=color, facecolor=color))
             else:
                 ax.add_patch(pdl.draw_xy(fill=True, edgecolor='k', facecolor='w'))
-        ax.set_xlim(-100, 100)
-        ax.set_ylim(-100, 100)
+        ax.set_xlim(*xylim)
+        ax.set_ylim(*xylim)
         ax.set_aspect('equal')
         ax.set_xlabel('x [cm]', loc='right')
         ax.set_ylabel('y [cm]', loc='top')
         ax.set_title(label, loc='right')
 
     axid = 0
-    draw_panel(axs[axid], umb_paddles, 'UMB')
+    draw_panel(axs[axid], umb_paddles, 'UMB', xylim=(-200, 200))
     if event:
         umb_ids = {p.paddle_id for p in umb_paddles}
         for h in event.hits:
@@ -88,7 +88,7 @@ def tof_projection_xy(paddle_occupancy = {},
                                   lw=1.5, edgecolor=paddle_style['edgecolor'], color=get_color(h.t0))
 
     axid = 0 if overlay_panels else 1
-    draw_panel(axs[axid], cbe_top_paddles, 'CBE TOP')
+    draw_panel(axs[axid], cbe_top_paddles, 'CBE TOP', xylim=(-100, 100))
     if event:
         top_ids = {p.paddle_id for p in cbe_top_paddles}
         for h in event.hits:
@@ -97,7 +97,7 @@ def tof_projection_xy(paddle_occupancy = {},
                                   lw=1.5, edgecolor=paddle_style['edgecolor'], color=get_color(h.t0))
 
     axid = 0 if overlay_panels else 2
-    draw_panel(axs[axid], cbe_bot_paddles, 'CBE BOT')
+    draw_panel(axs[axid], cbe_bot_paddles, 'CBE BOT', xylim=(-100, 100))
     if event:
         bot_ids = {p.paddle_id for p in cbe_bot_paddles}
         for h in event.hits:
@@ -162,8 +162,8 @@ if __name__ == '__main__':
     fig.savefig(f'{args.data_id}_pid_hist_reco.png')
 
     #cm = matplotlib.colormaps['gnuplot2']
-    mapping = 'gnuplot2'
-    fig, ax = tof_projection_xy(occu, cmap=mapping)
+    mapping = matplotlib.colormaps['gnuplot2']
+    fig, ax = tof_projection_xy(occu, cmap='gnuplot2')
     fig.savefig(f'{args.data_id}_12pps.pdf')
     fig, ax = go.tof.visual.unroll_cbe_sides(paddle_occupancy=occu, cmap=mapping)
     fig.savefig(f'{args.data_id}_8pps_1pps.pdf')

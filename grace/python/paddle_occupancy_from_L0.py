@@ -8,10 +8,21 @@ import matplotlib
 
 
 logger = logging.getLogger(__name__)
+
+def has_merged_event(frame, merged_event_types):
+    for m_type in merged_event_types:
+        try:
+            ev = frame.get_mergedevent(m_type)
+            return m_type
+        except ValueError as e:
+            if "Merged Event not found" in str(e):
+                continue
+            else: raise
+    return None
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Paddle occupancy graphic plot')
     parser.add_argument('-dir', '--data_dir', type = str, default='', help='A directory with telemetry binaries, as received from the telemetry stream')
-    parser.add_argument('-id', '--run_id', type=int, help = 'TOF run id' )
+    parser.add_argument('-id', '--run_id', type=str, help = 'TOF run id' )
 
     args = parser.parse_args()
 
@@ -21,38 +32,50 @@ if __name__ == '__main__':
     "TelemetryPacketType.InterestingEvent",
     "TelemetryPacketType.NoTofDataEvent"]
 
-#def file_loader(filename, merged_event_types = MERGED_EVENT_TYPES):
-
     files = Path(f'{args.data_dir}').glob('*.gaps')
-    #files = [k for k in files]
 
-    events = []
-    for f in files:
+    tofevents = []
+    stop = False 
+    for f in tqdm(files):
         reader  = go.io.CRReader(str(f))
         for frame in reader:
-                    m_type = frame.has_merged_event(frame, merged_event_types = MERGED_EVENT_TYPES)
-                    if m_type is None:
-                        continue
-                    try:
-                        ev = frame.get_mergedevent(m_type)
-                    except Exception as e:
-                        logger.warning(f'Merged event is corrupt! {e}')
-                        continue
+            m_type = has_merged_event(frame, merged_event_types = MERGED_EVENT_TYPES)
+            if m_type is None:
+                continue
+            #print(m_type)
+            try:
+                ev = frame.get_mergedevent(m_type)
+                #print(len(tofevents))
+                if len(tofevents) < 6000:
                     ev = ev.tof
-                    events.append(ev)
+                    tofevents.append(ev)
+                else:
+                    stop = True
+                    break
+            except Exception as e:
+                logger.warning(f'Merged event is corrupt! {e}')
+                continue
+        if stop: break
 
-    print(events[:5])
+    print(tofevents[0])
 
 
     # tofevents = [k.tof for k in data['events']]
-    # occu = go.tof.analysis.create_occupancy_dict(events = tofevents)
+    occu = go.tof.analysis.create_occupancy_dict(events = tofevents)
     
-    # cm = matplotlib.colormaps['gnuplot2']
+    cm = matplotlib.colormaps['gnuplot2']
+    
+    title1 = str(args.run_id) + '_12pps'
+    title2 = str(args.run_id) + '_8pps_1pps'
+    title3 = str(args.run_id) + '_10pps_3pps'
 
-    # fig1, ax1 = go.tof.visual.tof_projection_xy(occu, cmap=cm)
-    # fig2, ax2 = go.tof.visual.unroll_cbe_sides(paddle_occupancy=occu, cmap=cm)
-    # fig3, ax3 = go.tof.visual.unroll_cor(paddle_occupancy=occu, cmap=cm)
+    fig1, ax1 = go.tof.visual.tof_projection_xy(occu, cmap=cm)
+    fig1.suptitle(title1)
+    fig2, ax2 = go.tof.visual.unroll_cbe_sides(paddle_occupancy=occu, cmap=cm)
+    fig2.suptitle(title2)
+    fig3, ax3 = go.tof.visual.unroll_cor(paddle_occupancy=occu, cmap=cm)
+    fig3.suptitle(title3)
     
-    # fig1.savefig(str(args.run_id)+'_'+str(args.start_time)+'_'+str(args.end_time)+'_12pps.pdf')
-    # fig3.savefig(str(args.run_id)+'_'+str(args.start_time)+'_'+str(args.end_time)+'_10pps_3pps.pdf')
-    # fig2.savefig(str(args.run_id)+'_'+str(args.start_time)+'_'+str(args.end_time)+'_8pps_1pps.pdf')
+    fig1.savefig(title1 + '.pdf')
+    fig3.savefig(title3 +'.pdf')
+    fig2.savefig(title2 +'.pdf')
