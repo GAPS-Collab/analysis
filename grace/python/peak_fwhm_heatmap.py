@@ -95,13 +95,13 @@ if __name__ == '__main__':
                             waveform.apply_spike_filter()
                             voltages = np.array(waveform.voltages_a)
 
-                            peak = np.max(voltages)
-                            fwhm = fwhm(voltages)
+                            peak  = np.max(voltages)
+                            width = fwhm(voltages)
 
                             peak_height_all.append(peak)
                             peak_height_a.append(peak)
-                            fwhm_all.append(fwhm)
-                            fwhm_a.append(fwhm)
+                            fwhm_all.append(width)
+                            fwhm_a.append(width)
 
                     rb = paddle_map[paddle]['b']['rb']
                     ch = paddle_map[paddle]['b']['ch']
@@ -111,13 +111,13 @@ if __name__ == '__main__':
                             waveform.apply_spike_filter()
                             voltages = np.array(waveform.voltages_b)
                             
-                            peak = np.max(voltages)
-                            fwhm = fwhm(voltages)
+                            peak  = np.max(voltages)
+                            width = fwhm(voltages)
 
                             peak_height_all.append(peak)
                             peak_height_b.append(peak)
-                            fwhm_all.append(fwhm)
-                            fwhm_b.append(fwhm)
+                            fwhm_all.append(width)
+                            fwhm_b.append(width)
     
                 except Exception as e:
                     print(f"Error at hit {x}: {e}")
