@@ -7,6 +7,8 @@ import re
 from glob import glob
 from pathlib import Path
 import go_pybindings as gop
+import matplotlib.colors as colors
+
 
 def fwhm(wf):
     peak_idx = np.argmax(wf)
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     peak_height_b   = []
     fwhm_b          = []
 
-    for f in tqdm(tof_files[:5], desc = 'reading raw .tof.gaps files'):
+    for f in tqdm(tof_files, desc = 'reading raw .tof.gaps files'):
         reader = go.io.TofPacketReader(str(f), filter = go.io.TofPacketType.TofEvent)
         for pack in reader:
             tof_ev = go.events.TofEvent()
@@ -97,11 +99,13 @@ if __name__ == '__main__':
 
                             peak  = np.max(voltages)
                             width = fwhm(voltages)
-
-                            peak_height_all.append(peak)
-                            peak_height_a.append(peak)
-                            fwhm_all.append(width)
-                            fwhm_a.append(width)
+                            
+                            if peak <= 0 or width >= 100: continue
+                            else:
+                                peak_height_all.append(peak)
+                                peak_height_a.append(peak)
+                                fwhm_all.append(width)
+                                fwhm_a.append(width)
 
                     rb = paddle_map[paddle]['b']['rb']
                     ch = paddle_map[paddle]['b']['ch']
@@ -113,11 +117,13 @@ if __name__ == '__main__':
                             
                             peak  = np.max(voltages)
                             width = fwhm(voltages)
-
-                            peak_height_all.append(peak)
-                            peak_height_b.append(peak)
-                            fwhm_all.append(width)
-                            fwhm_b.append(width)
+                            
+                            if peak <= 0 or width >= 100: continue
+                            else:
+                                peak_height_all.append(peak)
+                                peak_height_b.append(peak)
+                                fwhm_all.append(width)
+                                fwhm_b.append(width)
     
                 except Exception as e:
                     print(f"Error at hit {x}: {e}")
@@ -125,35 +131,53 @@ if __name__ == '__main__':
     
     print('Finished reading data')
     
+    peak_height_all = np.array(peak_height_all)
+    peak_height_a   = np.array(peak_height_a)
+    peak_height_b   = np.array(peak_height_b)
+
+    fwhm_all        = np.array(fwhm_all)
+    fwhm_a          = np.array(fwhm_a)
+    fwhm_b          = np.array(fwhm_b)
+
     plt.figure()
-    h0 = plt.hist2d(peak_height_all, fwhm_all, bins=100, cmap='gnuplot2')
+    h0 = plt.hist2d(peak_height_all, fwhm_all, bins=(200,100), cmap='gnuplot2', norm=colors.LogNorm())
     plt.colorbar(h0[3])
     plt.xlabel('Peak Height [mV]')
     plt.ylabel('FWHM [nsec]')
+    plt.xlim(0,1000)
     plt.minorticks_on()
     plt.savefig('peak_vs_fwhm_heatmap_all.pdf')
 
     print('Plot 1/3 done')
 
     plt.figure()
-    h1 = plt.hist2d(peak_height_a, fwhm_a, bins = 100, cmap='gnuplot2')
+    h1 = plt.hist2d(peak_height_a, fwhm_a, bins = (200,100), cmap='gnuplot2', norm=colors.LogNorm())
     plt.colorbar(h1[3])
     plt.xlabel('Peak Height [mV]')
     plt.ylabel('FWHM [nsec]')
+    plt.xlim(0,1000)
     plt.minorticks_on()
     plt.savefig('peak_vs_fwhm_heatmap_a_side.pdf')
 
     print('Plot 2/3 done')
 
     plt.figure()
-    h2 = plt.hist2d(peak_height_b, fwhm_b, bins = 100, cmap='gnuplot2')
+    h2 = plt.hist2d(peak_height_b, fwhm_b, bins = (100,100), cmap='gnuplot2', norm=colors.LogNorm())
     plt.colorbar(h2[3])
     plt.xlabel('Peak Height [mV]')
     plt.ylabel('FWHM [nsec]')
+    plt.xlim(0,1000)
     plt.minorticks_on()
     plt.savefig('peak_vs_fwhm_heatmap_b_side.pdf')
 
     print('Plot 3/3 done')
     print('goodbye and goodluck')
+    
+    np.savetxt("peak_height_all.txt", peak_height_all)
+    np.savetxt("peak_height_a.txt", peak_height_a)
+    np.savetxt("peak_height_b.txt", peak_height_b)
 
+    np.savetxt("fwhm_all.txt", fwhm_all)
+    np.savetxt("fwhm_a.txt", fwhm_a)
+    np.savetxt("fwhm_b.txt", fwhm_b)
 
