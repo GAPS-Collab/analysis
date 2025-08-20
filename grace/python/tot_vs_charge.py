@@ -1,0 +1,161 @@
+import gaps_online as go
+from tqdm import tqdm
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+import re
+from glob import glob
+from pathlib import Path
+import go_pybindings as gop
+import matplotlib.colors as colors
+
+def time_over_threshold(wf, threshold=550.0):
+    """Return time (ns) waveform spends above threshold."""
+    bins_above = np.sum(wf > threshold)
+    return bins_above * 0.5  # 0.5 ns per bin
+
+parser = argparse.ArgumentParser(prog = 'create heatmap of time>550mV vs charge')
+parser.add_argument('-rd', '--raw_dir', default='', help = 'path to .tof.gaps files')
+parser.add_argument('-id', '--run_id', default = 0, help = 'the run id')
+parser.add_argument('-c', required=True, help='path to calibrations dir')
+parser.add_argument('-p', help='path to paddle mapping.csv')
+args = parser.parse_args()
+
+if __name__ == '__main__':
+    paddle_map = {}
+    with open('/home/gtytus/analysis/resources/channel_mapping.csv') as in_file:
+        variables = next(in_file).strip().split(',')
+        next(in_file)
+        for line in in_file:
+            row = line.strip().split(',')
+            paddle_id = int(row[0])
+            paddle_map[paddle_id] = {'a':{'rb':0,'ch':0},'b':{'rb':0,'ch':0}}
+            rb, ch = [int(d) for d in row[9].split('-')]
+            paddle_map[paddle_id]['a']['rb'] = rb
+            paddle_map[paddle_id]['a']['ch'] = ch - 1
+
+            row = next(in_file).strip().split(',')
+            rb, ch = [int(d) for d in row[9].split('-')]
+            paddle_map[paddle_id]['b']['rb'] = rb
+            paddle_map[paddle_id]['b']['ch'] = ch - 1
+
+    pattern = re.compile(r'RB(\d+)_\d{6}_\d{6}UTC\.cali\.tof\.gaps')
+    calibrations = glob(f'{args.c}/*.cali.tof.gaps')
+
+    calib = {}
+    for fname in calibrations:
+        match = pattern.search(fname)
+        if match:
+            rbid = match.group(1)
+            cali = gop.events.RBCalibration()
+            cali.from_file(fname)
+            calib[int(rbid)] = cali
+        else:
+            print("No match found for:", fname)
+
+    print('Finished Calibrating')
+
+    tof_run_path = Path(args.raw_dir)
+    tof_files = np.array([str(f) for f in ((tof_run_path.glob('*.tof.gaps')))])
+    tof_f_nums = [int(file.split('.')[0].split('_')[-1]) for file in tof_files]
+    tof_files = tof_files[np.argsort(tof_f_nums)]
+
+    print('Finished loading TOF files')
+
+    charge_all   = []
+    tot_all      = []
+    charge_a     = []
+    tot_a        = []
+    charge_b     = []
+    tot_b        = []
+
+    for f in tqdm(tof_files, desc = 'reading raw .tof.gaps files'):
+        reader = go.io.TofPacketReader(str(f), filter = go.io.TofPacketType.TofEvent)
+        for pack in reader:
+            tof_ev = go.events.TofEvent()
+            tof_ev.from_tofpacket(pack)
+            for x in range(len(tof_ev.hits)):
+                try:
+                    paddle = int(tof_ev.hits[x].paddle_id)
+
+                    # --- Side A ---
+                    rb = paddle_map[paddle]['a']['rb']
+                    ch = paddle_map[paddle]['a']['ch']
+                    for waveform in tof_ev.waveforms:
+                        if waveform.rb_id == rb and waveform.rb_channel_a == ch:
+                            waveform.calibrate(calib[rb])
+                            waveform.apply_spike_filter()
+                            voltages = np.array(waveform.voltages_a)
+                            peak  = np.max(voltages)
+
+                            if 600.0 <= peak <= 700.0:
+                                time_ns = time_over_threshold(voltages)
+                                q = tof_ev.hits[x].charge_a
+                                charge_all.append(q)
+                                tot_all.append(time_ns)
+                                charge_a.append(q)
+                                tot_a.append(time_ns)
+
+                    # --- Side B ---
+                    rb = paddle_map[paddle]['b']['rb']
+                    ch = paddle_map[paddle]['b']['ch']
+                    for waveform in tof_ev.waveforms:
+                        if waveform.rb_id == rb and waveform.rb_channel_b == ch:
+                            waveform.calibrate(calib[rb])
+                            waveform.apply_spike_filter()
+                            voltages = np.array(waveform.voltages_b)
+                            peak  = np.max(voltages)
+
+                            if 600.0 <= peak <= 700.0:
+                                time_ns = time_over_threshold(voltages)
+                                q = tof_ev.hits[x].charge_b
+                                charge_all.append(q)
+                                tot_all.append(time_ns)
+                                charge_b.append(q)
+                                tot_b.append(time_ns)
+
+                except Exception as e:
+                    print(f"Error at hit {x}: {e}")
+                    continue
+
+    print('Finished reading data')
+
+    # --- Plots ---
+    plt.figure()
+    h0 = plt.hist2d(charge_all, tot_all, bins=(200,100), cmap='gnuplot2', norm=colors.LogNorm())
+    plt.colorbar(h0[3])
+    plt.xlabel('Charge [pC]')
+    plt.ylabel('Time >550 mV [nsec]')
+    plt.minorticks_on()
+    plt.savefig('charge_vs_tot_heatmap_all.pdf')
+
+    print('Plot 1/3 done')
+
+    plt.figure()
+    h1 = plt.hist2d(charge_a, tot_a, bins =(200, 100), cmap='gnuplot2', norm=colors.LogNorm())
+    plt.colorbar(h1[3])
+    plt.xlabel('Charge [pC]')
+    plt.ylabel('Time >550 mV [nsec]')
+    plt.minorticks_on()
+    plt.savefig('charge_vs_tot_heatmap_a_side.pdf')
+
+    print('Plot 2/3 done')
+
+    plt.figure()
+    h2 = plt.hist2d(charge_b, tot_b, bins = (200,100), cmap='gnuplot2', norm=colors.LogNorm())
+    plt.colorbar(h2[3])
+    plt.xlabel('Charge [pC]')
+    plt.ylabel('Time >550 mV [nsec]')
+    plt.minorticks_on()
+    plt.savefig('charge_vs_tot_heatmap_b_side.pdf')
+
+    print('Plot 3/3 done')
+    print('goodbye and goodluck')
+
+    np.savetxt("tot_all.txt", tot_all)
+    np.savetxt("tot_a.txt", tot_a)
+    np.savetxt("tot_b.txt", tot_b)
+
+    np.savetxt("charge_all.txt", charge_all)
+    np.savetxt("charge_a.txt", charge_a)
+    np.savetxt("charge_b.txt", charge_b)
