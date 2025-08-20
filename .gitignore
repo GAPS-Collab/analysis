@@ -8,3 +8,18 @@ wheels/
 
 # venv
 .venv
+*.lock
+*.toml
+.python-version
+src/
+
+# pdf files from outputs
+*.pdf
+
+# png files from outputs
+*.png
+
+# txt files from outputs
+*.txt
+
+# gitignore 
