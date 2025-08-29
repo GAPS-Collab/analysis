@@ -116,49 +116,49 @@ if __name__ == '__main__':
                                 peak_err_y_low.append(peak_y_low)
                                 peak_err_y_high.append(peak_err_high)
 
-                     # --- Side B ---
-                     rb = paddle_map[paddle]['b']['rb']
-                     ch = paddle_map[paddle]['b']['ch']
-                     for waveform in tof_ev.waveforms:
-                         if waveform.rb_id == rb and waveform.rb_channel_b == ch:
-                             waveform.calibrate(calib[rb])
-                             waveform.apply_spike_filter()
-                             voltages = np.array(waveform.voltages_b)
-                             peak  = np.max(voltages)
+                    # --- Side B ---
+                    rb = paddle_map[paddle]['b']['rb']
+                    ch = paddle_map[paddle]['b']['ch']
+                    for waveform in tof_ev.waveforms:
+                        if waveform.rb_id == rb and waveform.rb_channel_b == ch:
+                            waveform.calibrate(calib[rb])
+                            waveform.apply_spike_filter()
+                            voltages = np.array(waveform.voltages_b)
+                            peak  = np.max(voltages)
 
-                             if 600.0 <= peak <= 700.0:
-                                time_ns = time_over_threshold(voltages)
-                                peak_actual.append(peak)
+                            if 600.0 <= peak <= 700.0:
+                            time_ns = time_over_threshold(voltages)
+                            peak_actual.append(peak)
 
-                                if 2.9 <= time_ns < 3.4:
-                                    peak_from_tot = 610.0026331203303
-                                    peak_err_low = 7.581254204453103
-                                    peak_err_high = 7.568196019619222
+                            if 2.9 <= time_ns < 3.4:
+                                peak_from_tot = 610.0026331203303
+                                peak_err_low = 7.581254204453103
+                                peak_err_high = 7.568196019619222
 
-                                elif 3.4 <= time_ns < 4.0:
-                                    peak_from_tot = 634.8939824280004
-                                    peak_err_low = 12.4929940177974
-                                    peak_err_high = 12.458883251453813
+                            elif 3.4 <= time_ns < 4.0:
+                                peak_from_tot = 634.8939824280004
+                                peak_err_low = 12.4929940177974
+                                peak_err_high = 12.458883251453813
 
-                                elif 4.0 <= time_ns < 4.5:
-                                    peak_from_tot = 659.8495656149304
-                                    peak_err_low = 7.800654072112707
-                                    peak_err_high = 7.769806799386743
+                            elif 4.0 <= time_ns < 4.5:
+                                peak_from_tot = 659.8495656149304
+                                peak_err_low = 7.800654072112707
+                                peak_err_high = 7.769806799386743
 
-                                elif 4.5 <= time_ns <= 5.0:
-                                    peak_from_tot = 684.9944558911562
-                                    peak_err_low = 12.790515924626334
-                                    peak_err_high = 12.693832477760793
+                            elif 4.5 <= time_ns <= 5.0:
+                                peak_from_tot = 684.9944558911562
+                                peak_err_low = 12.790515924626334
+                                peak_err_high = 12.693832477760793
 
-                                else: continue
+                            else: continue
 
-                                peak_calc.append(peak_from_tot)
-                                peak_err_y_low.append(peak_y_low)
-                                peak_err_y_high.append(peak_err_high)
+                            peak_calc.append(peak_from_tot)
+                            peak_err_y_low.append(peak_y_low)
+                            peak_err_y_high.append(peak_err_high)
 
-                 except Exception as e:
-                     print(f"Error at hit {x}: {e}")
-                     continue
+                except Exception as e:
+                    print(f"Error at hit {x}: {e}")
+                    continue
 
     print('Finished reading data')
     
