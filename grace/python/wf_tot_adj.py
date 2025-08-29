@@ -1,3 +1,5 @@
+#! /home/gtytus/.rye/shims/python
+
 import gaps_online as go
 from tqdm import tqdm
 import argparse
@@ -88,7 +90,6 @@ if __name__ == '__main__':
 
                             if 600.0 <= peak <= 700.0:
                                 time_ns = time_over_threshold(voltages)
-                                peak_actual.append(peak)
                                 
                                 if 2.9 <= time_ns < 3.4:
                                     peak_from_tot = 610.0026331203303
@@ -111,9 +112,10 @@ if __name__ == '__main__':
                                     peak_err_high = 12.693832477760793
 
                                 else: continue
-
+                                
+                                peak_actual.append(peak)
                                 peak_calc.append(peak_from_tot)
-                                peak_err_y_low.append(peak_y_low)
+                                peak_err_y_low.append(peak_err_low)
                                 peak_err_y_high.append(peak_err_high)
 
                     # --- Side B ---
@@ -127,34 +129,34 @@ if __name__ == '__main__':
                             peak  = np.max(voltages)
 
                             if 600.0 <= peak <= 700.0:
-                            time_ns = time_over_threshold(voltages)
-                            peak_actual.append(peak)
+                                time_ns = time_over_threshold(voltages)
 
-                            if 2.9 <= time_ns < 3.4:
-                                peak_from_tot = 610.0026331203303
-                                peak_err_low = 7.581254204453103
-                                peak_err_high = 7.568196019619222
+                                if 2.9 <= time_ns < 3.4:
+                                    peak_from_tot = 610.0026331203303
+                                    peak_err_low = 7.581254204453103
+                                    peak_err_high = 7.568196019619222
 
-                            elif 3.4 <= time_ns < 4.0:
-                                peak_from_tot = 634.8939824280004
-                                peak_err_low = 12.4929940177974
-                                peak_err_high = 12.458883251453813
+                                elif 3.4 <= time_ns < 4.0:
+                                    peak_from_tot = 634.8939824280004
+                                    peak_err_low = 12.4929940177974
+                                    peak_err_high = 12.458883251453813
 
-                            elif 4.0 <= time_ns < 4.5:
-                                peak_from_tot = 659.8495656149304
-                                peak_err_low = 7.800654072112707
-                                peak_err_high = 7.769806799386743
+                                elif 4.0 <= time_ns < 4.5:
+                                    peak_from_tot = 659.8495656149304
+                                    peak_err_low = 7.800654072112707
+                                    peak_err_high = 7.769806799386743
 
-                            elif 4.5 <= time_ns <= 5.0:
-                                peak_from_tot = 684.9944558911562
-                                peak_err_low = 12.790515924626334
-                                peak_err_high = 12.693832477760793
+                                elif 4.5 <= time_ns <= 5.0:
+                                    peak_from_tot = 684.9944558911562
+                                    peak_err_low = 12.790515924626334
+                                    peak_err_high = 12.693832477760793
 
-                            else: continue
-
-                            peak_calc.append(peak_from_tot)
-                            peak_err_y_low.append(peak_y_low)
-                            peak_err_y_high.append(peak_err_high)
+                                else: continue
+                                
+                                peak_actual.append(peak)
+                                peak_calc.append(peak_from_tot)
+                                peak_err_y_low.append(peak_err_low)
+                                peak_err_y_high.append(peak_err_high)
 
                 except Exception as e:
                     print(f"Error at hit {x}: {e}")
@@ -177,4 +179,29 @@ if __name__ == '__main__':
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('tot_peak_vs_real_peak.pdf')
+
+    residuals = np.array(peak_calc) - np.array(peak_actual)
+
+    plt.figure()
+
+    plt.errorbar(
+    peak_actual,
+    residuals,
+    yerr=[peak_err_y_low, peak_err_y_high],  # errors in calc -> same in residual
+    fmt='o',
+    capsize=2,
+    markersize=3,       # make points smaller
+    elinewidth=0.7,     # make error bar lines thinner
+    markeredgewidth=0.5 
+    )
+
+    plt.axhline(0, color='r', linestyle='--', label='Zero Residual')
+
+    plt.xlabel("Actual Peak")
+    plt.ylabel("Residual (Calc - Actual)")
+    plt.title("Residuals of Calculated Peak vs Actual Peak")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('residuals_peak_voltage.pdf')
 
