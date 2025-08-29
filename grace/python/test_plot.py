@@ -3,48 +3,16 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from collections import defaultdict
 
-#tot = np.loadtxt("tot_all_600_610.txt", delimiter=",")
-#peak = np.loadtxt("peak_all_600_610.txt", delimiter=",")
+
 ranges = [(600,610),(610,620),(620,630),(630,640),
           (640,650),(650,660),(660,670),(670,680),
           (680,690),(690,700)]
+bins_x = np.linspace(0, 20, 40)
 
 xvals = []
 xerrs = []
 means = []
 rms_vals = []
-
-#xvals = np.array(xvals)
-#xerrs = np.array(xerrs)
-#means = np.array(means)
-#rms_vals = np.array(rms_vals)
-
-grouped = defaultdict(list)
-for xv, m, r in zip(xvals, means, rms_vals):
-    grouped[xv].append((m, r))
-collapsed_x = []
-collapsed_y = []
-collapsed_yerr_low = []
-collapsed_yerr_high = []
-collapsed_xerr = []
-
-for xv, vals in grouped.items():
-    m_vals = np.array([v[0] for v in vals])
-    r_vals = np.array([v[1] for v in vals])
-
-    mean_y = np.mean(m_vals)  # average of the means
-
-    # lowest and highest possible based on RMS
-    low_y  = np.min(m_vals - r_vals)
-    high_y = np.max(m_vals + r_vals)
-
-    collapsed_x.append(xv)
-    collapsed_y.append(mean_y)
-    collapsed_yerr_low.append(mean_y - low_y)
-    collapsed_yerr_high.append(high_y - mean_y)
-    collapsed_xerr.append(0.5 * (2*xerrs[0]))  # or keep same as original xerr
-
-bins_x = np.linspace(0, 20, 40)
 
 for lo, hi in ranges:
     tot = np.loadtxt(f'tot_all_{lo}_{hi}.txt', delimiter=',')
@@ -75,6 +43,32 @@ plt.xlabel("TOT of most populated bin")
 plt.ylabel("Mean Peak (± RMS)")
 plt.title("Most Populated TOT Bin vs Peak")
 plt.savefig('test_tot_peak.pdf')
+
+grouped = defaultdict(list)
+for xv, m, r in zip(xvals, means, rms_vals):
+    grouped[xv].append((m, r))
+
+collapsed_x = []
+collapsed_y = []
+collapsed_yerr_low = []
+collapsed_yerr_high = []
+collapsed_xerr = []
+
+for xv, vals in grouped.items():
+    m_vals = np.array([v[0] for v in vals])
+    r_vals = np.array([v[1] for v in vals])
+
+    mean_y = np.mean(m_vals)
+
+    # full possible range using RMS
+    low_y  = np.min(m_vals - r_vals)
+    high_y = np.max(m_vals + r_vals)
+
+    collapsed_x.append(xv)
+    collapsed_y.append(mean_y)
+    collapsed_yerr_low.append(mean_y - low_y)
+    collapsed_yerr_high.append(high_y - mean_y)
+    collapsed_xerr.append(0.5 * (2*xerrs[0]))  # same xerr as before
 
 plt.figure()
 plt.errorbar(
