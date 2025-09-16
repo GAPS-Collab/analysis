@@ -41,7 +41,7 @@ for f in tqdm.tqdm(files):
     
         for pack in reader:
             ev = go.events.TofEvent()
-
+            if ev.has_any_mangling == True: mangling_from_status += 1
             try:
                 ev.from_tofpacket(pack)
                 status = ev.mastertriggerevent.status
@@ -53,9 +53,10 @@ for f in tqdm.tqdm(files):
                 pass
                 continue
 
+print(str(mangling_from_status))
 analysis_vals['mangling_flag'].append(mangling_from_status)
 
-with open(f'/home/tof/check-data/{args.id}/count_flags_{args.id}.txt', 'w+') as out_file:
+with open(f'/home/gtytus/analysis/grace/python/count_flags_{args.id}.txt', 'w+') as out_file:
     vals = list(analysis_vals.keys())
     row = ''    
     for val in vals:
