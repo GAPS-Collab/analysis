@@ -4,7 +4,7 @@ from pathlib import Path
 from tqdm import tqdm
 from collections import Counter
 
-run_path = Path("/data/tofdata/8")
+run_path = Path("/data/tofdata/95")
 files = sorted(run_path.glob("*.tof.gaps"))
 
 mapping = go.db.get_dsi_j_ch_pid_map()

@@ -1,7 +1,7 @@
 import numpy as np
 import argparse
 from tqdm import tqdm
-import gaps_online as go
+import gondola as go
 
 if __name__ == '__main__':
 
