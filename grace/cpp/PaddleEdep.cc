@@ -84,10 +84,11 @@ int main(int argc, char* argv[]){
         energy_hists[vid] = new TH1D(
             name.c_str(),
             title.c_str(),
-            200,        // bins
-            0.0, 30.0   // energy range (adjust if needed)
+            350,        // bins
+            0.0, 25.0   // energy range (adjust if needed)
         );
-
+	
+	energy_hists[vid]->SetStats(0);
         energy_hists[vid]->SetDirectory(nullptr);
         energy_hists[vid]->GetXaxis()->SetTitle("Energy Deposition [MeV]");
         energy_hists[vid]->GetYaxis()->SetTitle("Counts");
@@ -124,13 +125,68 @@ int main(int argc, char* argv[]){
     TCanvas* canvas = new TCanvas("c","c",800,600);
 
     for (auto& pair : energy_hists) {
+	TH1D* hist = pair.second;
+	if (hist->GetEntries() < 10) continue; //check for fitting empty 
 
         canvas->cd();
-        pair.second->Draw();
+	// finding FWHM
+	int maxBin = hist->GetMaximumBin();
+	double maxContent = hist->GetBinContent(maxBin);
+	double halfMax = 0.5 * maxContent;
+	
+	int leftBin = maxBin;
+	while (leftBin > 1 && hist->GetBinContent(leftBin) > halfMax) {
+    		leftBin--;
+	}
 
-        std::string pdf_name = "Edep_" + std::to_string(pair.first) + ".pdf";
+	int rightBin = maxBin;
+	int nBins = hist->GetNbinsX();
+	while (rightBin < nBins && hist->GetBinContent(rightBin) > halfMax) {
+    		rightBin++;
+	}
+
+	if (rightBin <= leftBin) continue; //in case fit fails it will still plot
+
+	// FWHM window 
+	double fitMin = hist->GetBinLowEdge(leftBin);
+	double fitMax = hist->GetBinLowEdge(rightBin + 1);	
+		
+	// Landau Fit
+	TF1* landauFit = new TF1("landauFit", "landau", 0.0, 25.0);
+	// initial parameters (maximum, MPV, width)
+	landauFit->SetRange(fitMin, fitMax);
+	landauFit ->SetParameters(maxContent, hist->GetBinCenter(maxBin), 0.3);
+        hist->Fit(landauFit, "RQ0", "", fitMin, fitMax);
+	landauFit->SetRange(0.0, 25.0);
+
+	hist->Draw();
+	landauFit->Draw("same");	
+	
+	// TPaveText
+	double entries = hist->GetEntries();
+    	double mpv     = landauFit->GetParameter(1);
+    	double width   = landauFit->GetParameter(2);
+    	double chi2    = landauFit->GetChisquare();
+    	int ndf        = landauFit->GetNDF();
+
+	TPaveText* box = new TPaveText(0.6,0.65,0.88,0.88,"NDC");
+    	box->SetFillColor(0);
+    	box->SetBorderSize(1);
+	box->SetTextAlign(12);
+	box->SetTextSize(0.03);
+    	box->AddText(Form("Entries = %.0f", entries));
+   	box->AddText(Form("MPV = %.3f MeV", mpv));
+    	box->AddText(Form("Width = %.3f", width));
+    	box->AddText(Form("#chi^{2}/NDF = %.2f", chi2/ndf));
+    	box->Draw();
+        
+	// save files for pdf and canvas
+	std::string pdf_name = "Edep_" + std::to_string(pair.first) + ".pdf";
         canvas->SaveAs(pdf_name.c_str());
-    
+	
+	// cleanup
+	delete landauFit;
+	delete box;
     }
 
     delete canvas;
