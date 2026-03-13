@@ -22,6 +22,9 @@ paddle_temps = {f"{i}{end}": [] for i in range(1,161) for end in ["A","B"]}
 
 files = (sorted(glob(binary_path + '*.bin')))
 
+pa_moni_data = go.monitoring.PAMoniDataSeries()
+pa_moni_data.max_size = int(10e6)
+
 for idx, file in enumerate(tqdm(files)):
     #if idx in skip_indices:
         #print(f"Skipping problematic file {file} at index {idx}")
@@ -30,10 +33,7 @@ for idx, file in enumerate(tqdm(files)):
     #basename = os.path.basename(file)
     #date_str, time_str = basename[3:9], basename[10:16]
     #timestamp = int(date_str + time_str)
-    
-    
-    pa_moni_data = go.monitoring.PAMoniDataSeries()
-    pa_moni_data.max_size = int(10e6)
+      
     pa_moni_data.add_telemetryfile(file)
     
     df = pa_moni_data.get_dataframe()
@@ -43,7 +43,7 @@ for idx, file in enumerate(tqdm(files)):
         for ch in range(1,17):
 
             temp = df[f"temps{ch}"][x]
-            timestamp = df['timestamp']
+            timestamp = df['timestamp'][x]
 
             pb_channel = f"{rb_id}-{ch:02d}"
 
@@ -52,7 +52,6 @@ for idx, file in enumerate(tqdm(files)):
                 paddle = channel_to_paddle[pb_channel]
 
                 paddle_temps[paddle].append((timestamp,temp))
-
 rows = []
 for paddle, values in paddle_temps.items():
     for timestamp, temp in values:
