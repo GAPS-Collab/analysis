@@ -19,8 +19,6 @@ channel_to_paddle = {
 
 paddle_temps = {f"{i}{end}": [] for i in range(1,161) for end in ["A","B"]}
 
-pa_moni_data = go.monitoring.PAMoniDataSeries()
-pa_moni_data.max_size = int(10e6)
 
 files = (sorted(glob(binary_path + '*.bin')))
 
@@ -29,19 +27,23 @@ for idx, file in enumerate(tqdm(files)):
         #print(f"Skipping problematic file {file} at index {idx}")
         #continue    
 
-    basename = os.path.basename(file)
-    date_str, time_str = basename[3:9], basename[10:16]
-    timestamp = int(date_str + time_str)
-
+    #basename = os.path.basename(file)
+    #date_str, time_str = basename[3:9], basename[10:16]
+    #timestamp = int(date_str + time_str)
+    
+    
+    pa_moni_data = go.monitoring.PAMoniDataSeries()
+    pa_moni_data.max_size = int(10e6)
     pa_moni_data.add_telemetryfile(file)
+    
     df = pa_moni_data.get_dataframe()
-
     for x in range(len(df)):
         rb_id = f"{int(df['board_id'][x]):02d}"
 
         for ch in range(1,17):
 
             temp = df[f"temps{ch}"][x]
+            timestamp = df['timestamp']
 
             pb_channel = f"{rb_id}-{ch:02d}"
 
