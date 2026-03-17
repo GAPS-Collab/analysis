@@ -63,6 +63,7 @@ int main(int argc, char* argv[]){
     GOptionParser* parser = GOptionParser::GetInstance();
     parser->AddProgramDescription("Produces a histogram of Energy Deposition per paddle over the data given by rec_file for the paddles indicated in the arguments");
     parser->AddCommandLineOption<string>("rec_path", "path to instrument data files", "./*", "i");
+    parser->AddCommandLineOption<string>("out_path", "path to output directory", "./*", "o");
     parser->ParseCommandLine(argc, argv);
     parser->Parse();
 
@@ -76,6 +77,10 @@ int main(int argc, char* argv[]){
 
     std::unordered_map<unsigned int, TH1D*> energy_hists;
 
+    string out_path = parser->GetOption<string>("out_path");
+    if (out_path.back() != '/')
+    out_path += "/";
+
     for (auto vid : volume_ids) {
 
         std::string name  = "Edep_" + std::to_string(vid);
@@ -84,7 +89,7 @@ int main(int argc, char* argv[]){
         energy_hists[vid] = new TH1D(
             name.c_str(),
             title.c_str(),
-            350,        // bins
+            50,        // bins
             0.0, 25.0   // energy range (adjust if needed)
         );
 	
@@ -103,9 +108,12 @@ int main(int argc, char* argv[]){
 
         const auto& energies  = Event->GetTotalEnergyDeposition();
         const auto& volumeIds = Event->GetVolumeId();
+	const auto& triggerSources = Event->GetTriggerSources();
+	
+	if (triggerSources.size() == 1 && triggerSources[0] != 2) continue;
 
         for (unsigned int k = 0; k < energies.size(); k++) {
-
+	
             unsigned int vid = volumeIds.at(k);
             double edep      = energies.at(k);
 
@@ -115,13 +123,6 @@ int main(int argc, char* argv[]){
         }
     }
 
-    TFile outfile("energy_by_volume.root", "RECREATE");
-
-    for (auto& pair : energy_hists) {
-        pair.second->Write();
-    }
-
-    outfile.Close();
     TCanvas* canvas = new TCanvas("c","c",800,600);
 
     for (auto& pair : energy_hists) {
@@ -181,9 +182,19 @@ int main(int argc, char* argv[]){
     	box->Draw();
         
 	// save files for pdf and canvas
-	std::string pdf_name = "Edep_" + std::to_string(pair.first) + ".pdf";
+	std::string pdf_name = out_path + "Edep_" + std::to_string(pair.first) + ".pdf";
         canvas->SaveAs(pdf_name.c_str());
 	
+	// save root files
+	std::string root_name = out_path + "/energy_by_volume.root";
+	TFile outfile(root_name.c_str(), "RECREATE");
+
+	for (auto& pair : energy_hists) {
+    	    pair.second->Write();   // now includes fit
+        }   
+
+	outfile.Close();
+
 	// cleanup
 	delete landauFit;
 	delete box;
