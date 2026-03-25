@@ -45,7 +45,8 @@ int main() {
     };
 
     std::vector<unsigned int> volume_ids = {
-        103000500,102000700,100000400,104000700,105000400,114000500,110000100,110000200,110000300
+    	111000500,100000800,110000400,114000300,112000300,113000200,100200300,102000100,104000800,103000100,105000300,106100200,116000000
+    
     };
 
     std::vector<TFile*> files;
@@ -211,7 +212,7 @@ int main() {
 	}
 
         volDir->cd();
-        combined->Write();
+        gr->Write(Form("mpv_vs_time_vol_%u", volume_id));
         c->Write();
         c->SaveAs(Form("MPV_%u_combined.pdf", volume_id));
 
