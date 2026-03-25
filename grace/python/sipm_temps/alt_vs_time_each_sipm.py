@@ -27,7 +27,7 @@ def main():
     # Sort altitude ONCE (important for merge_asof)
     df_altitude = df_altitude.sort_values("time_real")
 
-    cutoff = pd.Timestamp("2023-12-20")
+    cutoff = pd.Timestamp("2025-12-20")
 
     # Loop over paddles
     for i in tqdm(range(1, 161)):
