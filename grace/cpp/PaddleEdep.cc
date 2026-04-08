@@ -89,7 +89,7 @@ int main(int argc, char* argv[]){
         energy_hists[vid] = new TH1D(
             name.c_str(),
             title.c_str(),
-            50,        // bins
+            100,        // bins
             0.0, 25.0   // energy range (adjust if needed)
         );
 	
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]){
         const auto& volumeIds = Event->GetVolumeId();
 	const auto& triggerSources = Event->GetTriggerSources();
 	
-	if (triggerSources.size() == 1 && triggerSources[0] != 2) continue;
+	//if (triggerSources.size() == 1 && triggerSources[0] != 2) continue;
 
         for (unsigned int k = 0; k < energies.size(); k++) {
 	
@@ -127,7 +127,16 @@ int main(int argc, char* argv[]){
 
     for (auto& pair : energy_hists) {
 	TH1D* hist = pair.second;
-	if (hist->GetEntries() < 10) continue; //check for fitting empty 
+	
+	if (!hist) {
+                std::cout << "  Histogram missing: " << std::endl;
+                continue;
+        }
+
+	
+	if (hist->GetEntries() < 10) {
+		std::cout<< "Too few entries for fit" << std::endl;
+	}
 
         canvas->cd();
 	// finding FWHM

@@ -14,34 +14,34 @@
 
 int main() {
 
-    std::string base_path = "/home/gtytus/analysis/grace/cpp/build/v25.10_edep/";
+    std::string base_path = "/home/gtytus/analysis/grace/cpp/build/v26.01_edep/";
 
     std::vector<std::string> days = {
-        "251216_2_hr_chunks",
-	"251217_2_hr_chunks",
-        "251218_2_hr_chunks",
-        "251219_2_hr_chunks",
-        "251220_2_hr_chunks",
-        "251221_2_hr_chunks",
-        "251222_2_hr_chunks",
-	"251223_2_hr_chunks",
-	"251224_2_hr_chunks",
-	"251225_2_hr_chunks",
-	"251226_2_hr_chunks",
-	"251227_2_hr_chunks",
-	"251228_2_hr_chunks",
-	"251229_2_hr_chunks",
-	"251230_2_hr_chunks", 
-	"251231_2_hr_chunks",
-	"260101_2_hr_chunks",
-	"260102_2_hr_chunks",
-	"260103_2_hr_chunks", 
-	"260104_2_hr_chunks", 
-	"260105_2_hr_chunks",
-	"260106_2_hr_chunks", 
-	"260107_2_hr_chunks",
-	"260108_2_hr_chunks",
-	"260109_2_hr_chunks"
+        "251216_1_hr_chunks",
+	"251217_1_hr_chunks",
+        "251218_1_hr_chunks",
+        "251219_1_hr_chunks",
+        "251220_1_hr_chunks",
+        "251221_1_hr_chunks",
+        "251222_1_hr_chunks",
+	"251223_1_hr_chunks",
+	"251224_1_hr_chunks",
+	"251225_1_hr_chunks",
+	"251226_1_hr_chunks",
+	"251227_1_hr_chunks",
+	"251228_1_hr_chunks",
+	"251229_1_hr_chunks",
+	"251230_1_hr_chunks", 
+	"251231_1_hr_chunks",
+	"260101_1_hr_chunks",
+	"260102_1_hr_chunks",
+	"260103_1_hr_chunks", 
+	"260104_1_hr_chunks", 
+	"260105_1_hr_chunks",
+	"260106_1_hr_chunks", 
+	"260107_1_hr_chunks",
+	"260108_1_hr_chunks",
+	"260109_1_hr_chunks"
     };
 
     std::vector<unsigned int> volume_ids = {
