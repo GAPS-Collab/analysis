@@ -21,7 +21,7 @@ def main():
 
     os.makedirs(args.outdir, exist_ok=True)
     
-    paddle_vid_map = gondola.db.get_hid_vid_map()
+    paddle_vid_map = gondola.db.get_hid_vid_maps()[0]
 
     # -----------------------------
     # Load MPV file
