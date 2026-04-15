@@ -125,24 +125,27 @@ def main():
         sems = []
         
         x_bins = temp_edges
+        
+        y_centers = 0.5 * (mpv_edges[:-1] + mpv_edges[1:])
 
-        for b in range(len(x_bins) - 1):
-            mask = (x >= x_bins[b]) & (x < x_bins[b+1])
-            y_slice = y[mask]
 
-            if len(y_slice) > 0:
-                mean = np.mean(y_slice)
-                std = np.std(y_slice)
-                sem = std / np.sqrt(len(y_slice))
-            else:
-                mean = np.nan
-                sem = np.nan
+        #for b in range(len(x_bins) - 1):
+        #    mask = (x >= x_bins[b]) & (x < x_bins[b+1])
+        #    y_slice = y[mask]
 
-            center = 0.5 * (x_bins[b] + x_bins[b+1])
+        #    if len(y_slice) > 0:
+        #        mean = np.mean(y_slice)
+        #        std = np.std(y_slice)
+        #        sem = std / np.sqrt(len(y_slice))
+        #    else:
+        #        mean = np.nan
+        #        sem = np.nan
 
-            bin_centers.append(center)
-            means.append(mean)
-            sems.append(sem)
+        #    center = 0.5 * (x_bins[b] + x_bins[b+1])
+
+        #    bin_centers.append(center)
+        #    means.append(mean)
+        #    sems.append(sem)
 
         x_fit = np.array(bin_centers)
         y_fit = np.array(means)
@@ -184,6 +187,30 @@ def main():
                 print(f"{paddle}: no populated bins, skipping log scale")
                 h2.imshow(log=0, cmap=cmap, zorder=0)
             
+            y_centers = 0.5 * (mpv_edges[:-1] + mpv_edges[1:])
+
+            for ix in range(len(temp_edges) - 1):
+            
+                counts = h2.bincontent[ix, :]   # all y bins for this x bin
+                total = np.sum(counts)
+            
+                center = 0.5 * (temp_edges[ix] + temp_edges[ix+1])
+            
+                if total > 0:
+                    mean = np.sum(counts * y_centers) / total
+            
+                    # weighted variance
+                    var = np.sum(counts * (y_centers - mean)**2) / total
+                    std = np.sqrt(var)
+            
+                    sem = std / np.sqrt(total)
+                else:
+                    mean = np.nan
+                    sem = np.nan
+            
+                bin_centers.append(center)
+                means.append(mean)
+                sems.append(sem)
             cb = plt.colorbar()
             plt.plot(x_line,y_line,color='#aa0066',linewidth=1,label=f"slope = {slope:.2e} ± {slope_err:.1e}",zorder=10)
             plt.errorbar(bin_centers,means,yerr=sems,fmt='o',color='xkcd:neon pink',markersize=2,label="Mean ± SEM",zorder=11)
