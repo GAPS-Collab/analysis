@@ -28,6 +28,7 @@ def main():
 
     df["time_real"] = start_time + pd.to_timedelta(df["timestamp"], unit="s")
     df_altitude["time_real"] = start_time + pd.to_timedelta(df_altitude["timestamp"], unit="s")
+    df_altitude["altitude"] = df_altitude["altitude"]/1000
 
     # Sort altitude once
     df_altitude = df_altitude.sort_values("time_real")
@@ -58,10 +59,7 @@ def main():
             )
 
             # Drop failed matches + apply filters
-            df_merged = df_merged[
-                (df_merged["altitude"].notna()) &
-                (df_merged["altitude"] > 5000)
-            ].reset_index(drop=True)
+            df_merged = df_merged[df_merged["altitude"].notna()].reset_index(drop=True)
 
             if df_merged.empty:
                 continue
@@ -76,8 +74,8 @@ def main():
             y = df_merged["temp"].values
             x = df_merged["altitude"].values
             
-            x_bins = np.linspace(30000, 40000, 101)
-            y_bins = np.linspace(-40, 40, 101)
+            x_bins = np.linspace(30, 40, 101)
+            y_bins = np.linspace(-50, 50, 101)
 
             bin_centers = []
             means = []
@@ -133,7 +131,7 @@ def main():
             h = d.factory.hist2d(
                 (x, y),
                 bins=(x_bins, y_bins),
-                labels=("Altitude [m]", "Temperature [°C]")
+                labels=("Altitude [km]", "Temperature [°C]")
             )
             
             # Plot 
@@ -151,9 +149,9 @@ def main():
             plt.plot(x_line, y_line,color='#aa0066', linewidth=1,label=f"slope = {slope:.2e} ± {slope_err:.1e}",zorder=11)
             plt.errorbar(bin_centers, means, yerr=sems,fmt='o', color='xkcd:neon pink', markersize=1, label="Mean ± SEM")
             plt.ylabel("Temperature [°C]") 
-            plt.xlabel("Altitude [m]") 
+            plt.xlabel("Altitude [km]") 
             plt.title(f"Temperature vs Altitude (post 12/20) {paddle}") 
-            plt.xlim(30000, 40000) 
+            plt.xlim(30, 40) 
             
             y_min = np.nanmin(means)
             y_max = np.nanmax(means)
@@ -211,5 +209,26 @@ def main():
     print(f"Closest to average: {closest_avg_slope:.3e} → paddle {avg_paddle}")
     
     print(f"\nClosest to zero slope: {zero_slope:.3e} ({zero_slope*1000:.3f} °C/km) → paddle {zero_paddle}")
+
+    plt.figure(figsize=(14,6))
+
+    paddle_indices = np.arange(len(paddles_with_slopes))
+    
+    plt.scatter(paddle_indices, slopes, s=10)
+    
+    plt.xticks(paddle_indices, paddles_with_slopes, rotation=90, fontsize=4)
+    
+    plt.xlabel("Paddle")
+    plt.ylabel("Slope (°C / km)")
+    plt.title("Slope vs Paddle")
+    
+    plt.grid(alpha=0.3)
+    
+    plt.tight_layout()
+    
+    outpath = os.path.join(args.outdir, "slope_vs_paddle_labeled.pdf")
+    plt.savefig(outpath)
+    plt.close()
+
 if __name__ == "__main__":
     main()
