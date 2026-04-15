@@ -71,41 +71,6 @@ def main():
             .mean()
             .reset_index()
         )
-        
-        mpv_bins = time_mpv_series.floor("1h")
-
-        temp_matched = mpv_bins.map(
-            temp_binned.set_index("time_bin")["temp"]
-        )
-
-        mask_late = time_mpv_series >= cutoff
-
-        mpv_vals  = y_mpv[mask_late]
-        temp_vals = temp_matched[mask_late]
-        mask_valid = ~np.isnan(temp_vals)
-        mpv_vals  = mpv_vals[mask_valid]
-        temp_vals = temp_vals[mask_valid]
-        gr = f[gr_name]
-
-        n = gr.member("fNpoints")
-        x_mpv = gr.member("fX")[:n]
-        y_mpv = gr.member("fY")[:n]
-
-        time_mpv = pd.to_datetime(x_mpv, unit="s")
-        time_mpv_series = pd.to_datetime(time_mpv)
-
-        df_paddle = df_temps[df_temps["paddle"] == paddle].copy()
-
-        if len(df_paddle) == 0:
-            continue
-
-        df_paddle["time_bin"] = df_paddle["time_real"].dt.floor("1h")
-        temp_binned = (
-            df_paddle
-            .groupby("time_bin")["temp"]
-            .mean()
-            .reset_index()
-        )
 
         mpv_bins = time_mpv_series.floor("1h")
 
@@ -121,11 +86,6 @@ def main():
         mpv_vals  = mpv_vals[mask_valid]
         temp_vals = temp_vals[mask_valid]
 
-        if len(mpv_vals) == 0:
-            continue
-    
-        max_temp = float(temp_vals.max())
-        min_temp = float(temp_vals.min())
 
         if len(mpv_vals) == 0:
             continue
@@ -133,15 +93,21 @@ def main():
         max_temp = float(temp_vals.max())
         min_temp = float(temp_vals.min())
         mean_mpv = float(mpv_vals.mean())
-        
+        mpv_min = np.percentile(mpv_vals, 2)
+        mpv_max = np.percentile(mpv_vals, 98)
+        mpv_edges = np.linspace(mpv_min, mpv_max, 20)
+
+
         if min_temp == max_temp:
             print(f"Skipping {paddle}: no temp variation")
             continue
 
         temp_range = max_temp - min_temp
+        
+
 
         n_temp_bins = int(temp_range) if temp_range >= 20 else 20
-        n_temp_bins = max(n_temp_bins, 2)
+        #n_temp_bins = max(n_temp_bins, 2)
         temp_edges = np.linspace(min_temp, max_temp, n_temp_bins + 1)
 
         mpv_edges = np.linspace(mean_mpv * 0.8, mean_mpv * 1.2, 21)
@@ -152,11 +118,15 @@ def main():
         x = temp_vals
         y = mpv_vals
         
-        x_bins = temp_edges
+        bin_width = 2.0
+        temp_edges = np.arange(np.floor(min_temp), np.ceil(max_temp) + bin_width, bin_width)
+
         bin_centers = []
         means = []
         sems = []
         
+        x_bins = temp_edges
+
         for b in range(len(x_bins) - 1):
             mask = (x >= x_bins[b]) & (x < x_bins[b+1])
             y_slice = y[mask]
@@ -175,30 +145,20 @@ def main():
             means.append(mean)
             sems.append(sem)
 
-            x_fit = np.array(bin_centers)
-            y_fit = np.array(means)
-            y_err = np.array(sems)
+        x_fit = np.array(bin_centers)
+        y_fit = np.array(means)
+        y_err = np.array(sems)
              
-            mask = (~np.isnan(x_fit)) & (~np.isnan(y_fit)) & (~np.isnan(y_err)) & (y_err > 0)
+        mask = (~np.isnan(x_fit)) & (~np.isnan(y_fit)) & (~np.isnan(y_err)) & (y_err > 0)
              
-            if np.sum(mask) < 2:
-                print(f"{paddle}: not enough points for fit")
-                continue
+        if np.sum(mask) < 3:
+            print(f"{paddle}: not enough points for fit")
+            continue
              
         x_fit = x_fit[mask]
         y_fit = y_fit[mask]
         y_err = y_err[mask]
     
-        mask = (~np.isnan(x_fit)) & (~np.isnan(y_fit)) & (~np.isnan(y_err)) & (y_err > 0)
-        if np.sum(mask) < 2:
-            print(f"{paddle}: not enough points for fit")
-            continue
-
-        x_fit = x_fit[mask]
-        y_fit = y_fit[mask]
-        y_err = y_err[mask]
-            
-
         coeffs, cov = np.polyfit(x_fit, y_fit, 1, w=1/y_err, cov=True)
 
         slope, intercept = coeffs
@@ -233,10 +193,11 @@ def main():
             plt.title(f"MPV vs Temperature ({paddle})")
             plt.colorbar(label="Counts")
             plt.grid(alpha=0.3)
-            y_min = np.nanmin(means)
-            y_max = np.nanmax(means)
-            plt.ylim(y_min - 0.1*(y_max - y_min), y_max + 0.1*(y_max - y_min))
-            #plt.ylim(0, mean_mpv + 0.5)
+            y_min = np.percentile(means, 2)
+            y_max = np.percentile(means, 98)
+
+            #plt.ylim(y_min - 0.1*(y_max - y_min), y_max + 0.1*(y_max - y_min))
+            plt.ylim(y_min - 0.1, y_max + 0.1)
             plt.xlim(min_temp - 5, max_temp + 5)
             
         
