@@ -18,6 +18,9 @@ def main():
     args = parser.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
+    
+    d.visual()
+    
     paddle_vid_map = go.db.get_hid_vid_maps()[0]
 
     f = uproot.open(args.mpvs)
@@ -36,6 +39,10 @@ def main():
         paddles = sorted(df_temps["paddle"].unique())
 
     cutoff = pd.Timestamp("2025-12-20") #after gain correction
+
+    slopes = []
+    slope_errs = []
+    paddles_with_slopes = []
 
     for paddle in paddles:
 
@@ -82,10 +89,10 @@ def main():
 
         mpv_vals  = y_mpv[mask_late]
         temp_vals = temp_matched[mask_late]
+
         mask_valid = ~np.isnan(temp_vals)
         mpv_vals  = mpv_vals[mask_valid]
         temp_vals = temp_vals[mask_valid]
-
 
         if len(mpv_vals) == 0:
             continue
@@ -93,24 +100,19 @@ def main():
         max_temp = float(temp_vals.max())
         min_temp = float(temp_vals.min())
         mean_mpv = float(mpv_vals.mean())
-        mpv_min = np.percentile(mpv_vals, 2)
-        mpv_max = np.percentile(mpv_vals, 98)
-        mpv_edges = np.linspace(mpv_min, mpv_max, 20)
-
-
+        
         if min_temp == max_temp:
             print(f"Skipping {paddle}: no temp variation")
             continue
-
-        temp_range = max_temp - min_temp
         
-
+        temp_range = max_temp - min_temp
 
         n_temp_bins = int(temp_range) if temp_range >= 20 else 20
-        #n_temp_bins = max(n_temp_bins, 2)
+        n_temp_bins = max(n_temp_bins, 2)
         temp_edges = np.linspace(min_temp, max_temp, n_temp_bins + 1)
 
         mpv_edges = np.linspace(mean_mpv * 0.8, mean_mpv * 1.2, 21)
+
         
         cmap = matplotlib.colormaps['coolwarm']
 
@@ -118,9 +120,6 @@ def main():
         x = temp_vals
         y = mpv_vals
         
-        bin_width = 2.0
-        temp_edges = np.arange(np.floor(min_temp), np.ceil(max_temp) + bin_width, bin_width)
-
         bin_centers = []
         means = []
         sems = []
@@ -167,14 +166,6 @@ def main():
         x_line = np.linspace(x_fit.min(), x_fit.max(), 200)
         y_line = slope * x_line + intercept
 
-        temp_range = max_temp - min_temp
-
-        n_temp_bins = int(temp_range) if temp_range >= 20 else 20
-        n_temp_bins = max(n_temp_bins, 2)
-        temp_edges = np.linspace(min_temp, max_temp, n_temp_bins + 1)
-
-        mpv_edges = np.linspace(mean_mpv * 0.8, mean_mpv * 1.2, 21)
-
         try:
             h2 = d.factory.hist2d(
                 (temp_vals,
@@ -182,20 +173,27 @@ def main():
                 bins=(temp_edges, mpv_edges)
             )
 
-            print(len(temp_vals), len(mpv_vals))            
+            #print(len(temp_vals), len(mpv_vals))            
 
             plt.figure(figsize=(6,5))
-            h2.imshow(log=0, cmap=cmap)
+            
+            #h2.imshow(log=0, cmap=cmap)
+            if np.any(h2.bincontent > 0):
+                h2.imshow(log=0, cmap=cmap, zorder=0)
+            else:
+                print(f"{paddle}: no populated bins, skipping log scale")
+                h2.imshow(log=0, cmap=cmap, zorder=0)
+            
+            cb = plt.colorbar()
             plt.plot(x_line,y_line,color='#aa0066',linewidth=1,label=f"slope = {slope:.2e} ± {slope_err:.1e}",zorder=10)
             plt.errorbar(bin_centers,means,yerr=sems,fmt='o',color='xkcd:neon pink',markersize=2,label="Mean ± SEM",zorder=11)
             plt.xlabel("Temperature")
             plt.ylabel("MPV")
             plt.title(f"MPV vs Temperature ({paddle})")
-            plt.colorbar(label="Counts")
             plt.grid(alpha=0.3)
-            y_min = np.percentile(means, 2)
-            y_max = np.percentile(means, 98)
-
+            
+            y_min = np.nanmin(means)
+            y_max = np.nanmax(means)
             #plt.ylim(y_min - 0.1*(y_max - y_min), y_max + 0.1*(y_max - y_min))
             plt.ylim(y_min - 0.1, y_max + 0.1)
             plt.xlim(min_temp - 5, max_temp + 5)
