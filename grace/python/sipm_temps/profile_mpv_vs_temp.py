@@ -112,68 +112,41 @@ def main():
         temp_edges = np.linspace(min_temp, max_temp, n_temp_bins + 1)
 
         mpv_edges = np.linspace(mean_mpv * 0.8, mean_mpv * 1.2, 21)
-
+        x_bins = temp_edges
         
+        bin_centers = []
+        means = []
+        sems = []
+
         cmap = matplotlib.colormaps['coolwarm']
 
         #fitting
         x = temp_vals
         y = mpv_vals
         
-        bin_centers = []
-        means = []
-        sems = []
-        
-        x_bins = temp_edges
-        
-        y_centers = 0.5 * (mpv_edges[:-1] + mpv_edges[1:])
+        for b in range(len(x_bins) - 1):
+            mask = (x >= x_bins[b]) & (x < x_bins[b+1])
+            y_slice = y[mask]
 
+            if len(y_slice) > 0:
+                mean = np.mean(y_slice)
+                std = np.std(y_slice)
+                sem = std / np.sqrt(len(y_slice))
+            else:
+                mean = np.nan
+                sem = np.nan
 
-        #for b in range(len(x_bins) - 1):
-        #    mask = (x >= x_bins[b]) & (x < x_bins[b+1])
-        #    y_slice = y[mask]
+            center = 0.5 * (x_bins[b] + x_bins[b+1])
 
-        #    if len(y_slice) > 0:
-        #        mean = np.mean(y_slice)
-        #        std = np.std(y_slice)
-        #        sem = std / np.sqrt(len(y_slice))
-        #    else:
-        #        mean = np.nan
-        #        sem = np.nan
-
-        #    center = 0.5 * (x_bins[b] + x_bins[b+1])
-
-        #    bin_centers.append(center)
-        #    means.append(mean)
-        #    sems.append(sem)
-
-        x_fit = np.array(bin_centers)
-        y_fit = np.array(means)
-        y_err = np.array(sems)
-             
-        mask = (~np.isnan(x_fit)) & (~np.isnan(y_fit)) & (~np.isnan(y_err)) & (y_err > 0)
-             
-        if np.sum(mask) < 3:
-            print(f"{paddle}: not enough points for fit")
-            continue
-             
-        x_fit = x_fit[mask]
-        y_fit = y_fit[mask]
-        y_err = y_err[mask]
-    
-        coeffs, cov = np.polyfit(x_fit, y_fit, 1, w=1/y_err, cov=True)
-
-        slope, intercept = coeffs
-        slope_err = np.sqrt(cov[0,0])
-
-        x_line = np.linspace(x_fit.min(), x_fit.max(), 200)
-        y_line = slope * x_line + intercept
+            bin_centers.append(center)
+            means.append(mean)
+            sems.append(sem)
 
         try:
             h2 = d.factory.hist2d(
                 (temp_vals,
                 mpv_vals),
-                bins=(temp_edges, mpv_edges)
+                bins=(temp_edges, temp_edges*2)
             )
 
             #print(len(temp_vals), len(mpv_vals))            
@@ -187,30 +160,37 @@ def main():
                 print(f"{paddle}: no populated bins, skipping log scale")
                 h2.imshow(log=0, cmap=cmap, zorder=0)
             
+            bin_centers = []
+            means = []
+            sems = []
+        
+            x_bins = temp_edges
             y_centers = 0.5 * (mpv_edges[:-1] + mpv_edges[1:])
+            
+            
+            x_fit = np.array(bin_centers)
+            y_fit = np.array(means)
+            y_err = np.array(sems)
+                 
+            mask = (~np.isnan(x_fit)) & (~np.isnan(y_fit)) & (~np.isnan(y_err)) & (y_err > 0)
+                 
+            if np.sum(mask) < 3:
+                print(f"{paddle}: not enough points for fit")
+                continue
+                 
+            x_fit = x_fit[mask]
+            y_fit = y_fit[mask]
+            y_err = y_err[mask]
+        
+            coeffs, cov = np.polyfit(x_fit, y_fit, 1, w=1/y_err, cov=True)
+    
+            slope, intercept = coeffs
+            slope_err = np.sqrt(cov[0,0])
+    
+            x_line = np.linspace(x_fit.min(), x_fit.max(), 200)
+            y_line = slope * x_line + intercept
+    
 
-            for ix in range(len(temp_edges) - 1):
-            
-                counts = h2.bincontent[ix, :]   # all y bins for this x bin
-                total = np.sum(counts)
-            
-                center = 0.5 * (temp_edges[ix] + temp_edges[ix+1])
-            
-                if total > 0:
-                    mean = np.sum(counts * y_centers) / total
-            
-                    # weighted variance
-                    var = np.sum(counts * (y_centers - mean)**2) / total
-                    std = np.sqrt(var)
-            
-                    sem = std / np.sqrt(total)
-                else:
-                    mean = np.nan
-                    sem = np.nan
-            
-                bin_centers.append(center)
-                means.append(mean)
-                sems.append(sem)
             cb = plt.colorbar()
             plt.plot(x_line,y_line,color='#aa0066',linewidth=1,label=f"slope = {slope:.2e} ± {slope_err:.1e}",zorder=10)
             plt.errorbar(bin_centers,means,yerr=sems,fmt='o',color='xkcd:neon pink',markersize=2,label="Mean ± SEM",zorder=11)
