@@ -47,7 +47,7 @@ def main():
     for paddle in paddles:
 
         print(f"Processing {paddle}")
-
+        
         vid = paddle_vid_map[int(paddle.rstrip('A').rstrip('B'))]
         if vid >= 2000000000: continue
 
@@ -84,18 +84,33 @@ def main():
         temp_matched = mpv_bins.map(
             temp_binned.set_index("time_bin")["temp"]
         )
-
-        mask_late = time_mpv_series >= cutoff
-
-        mpv_vals  = y_mpv[mask_late]
-        temp_vals = temp_matched[mask_late]
-
-        mask_valid = ~np.isnan(temp_vals)
-        mpv_vals  = mpv_vals[mask_valid]
-        temp_vals = temp_vals[mask_valid]
         
-        mpv_edges = np.linspace(mpv_vals.min(), mpv_vals.max(), 100)
+        mask = (
+            (time_mpv_series >= cutoff) &
+            (~np.isnan(temp_matched)) &
+            (~np.isnan(y_mpv)) &
+            (y_mpv >= 0.1)
+        )   
 
+        mpv_vals  = y_mpv[mask]
+        temp_vals = temp_matched[mask]
+
+        #mask_late = time_mpv_series >= cutoff
+
+        #mpv_vals  = y_mpv[mask_late]
+        #temp_vals = temp_matched[mask_late]
+
+        #mask_valid = ~np.isnan(temp_vals) & (~np.isnan(mpv_vals))
+        #mpv_vals  = mpv_vals[mask_valid]
+        #temp_vals = temp_vals[mask_valid]
+        #
+        #mask_mpv = mpv_vals >= 0.1
+        #mpv_vals  = mpv_vals[mask_mpv]
+        #temp_vals = temp_vals[mask_mpv]
+
+
+        #mpv_edges = np.linspace(mpv_vals.min(), mpv_vals.max(), 100)
+        mpv_edges = np.linspace(0,2,100)
 
         if len(mpv_vals) == 0:
             continue
@@ -112,7 +127,8 @@ def main():
 
         n_temp_bins = int(temp_range) if temp_range >= 20 else 20
         n_temp_bins = max(n_temp_bins, 2)
-        temp_edges = np.linspace(min_temp, max_temp, n_temp_bins + 1)
+        #temp_edges = np.linspace(min_temp, max_temp, n_temp_bins + 1)
+        temp_edges = np.linspace(-50,50,100)
 
         #mpv_edges = np.linspace(mean_mpv * 0.8, mean_mpv * 1.2, 21)
         x_bins = temp_edges
@@ -185,7 +201,12 @@ def main():
     
             slope, intercept = coeffs
             slope_err = np.sqrt(cov[0,0])
-    
+            
+            slopes.append(slope)
+            slope_errs.append(slope_err)
+            paddles_with_slopes.append(paddle)
+
+
             x_line = np.linspace(x_fit.min(), x_fit.max(), 200)
             y_line = slope * x_line + intercept
     
@@ -201,16 +222,82 @@ def main():
             y_min = np.nanmin(means)
             y_max = np.nanmax(means)
             #plt.ylim(y_min - 0.1*(y_max - y_min), y_max + 0.1*(y_max - y_min))
-            plt.ylim(y_min - 0.1, y_max + 0.1)
-            plt.xlim(min_temp - 5, max_temp + 5)
-            
-        
+            #plt.ylim(y_min - 0.1, y_max + 0.1)
+            #plt.xlim(min_temp - 5, max_temp + 5)
+            plt.xlim(-50,50)
+            plt.ylim(0,2)
+            plt.legend() 
             outpath = os.path.join(args.outdir, f"profile_mpv_vs_temp_2d_{paddle}.png")
             plt.savefig(outpath, dpi=150, bbox_inches="tight")
             plt.close()
         except Exception as e:
             print(f"Histogram failed for {paddle}: {e}")
             continue
+    
+    plt.figure(figsize=(8,5))
+
+    plt.hist(slopes, bins=20, alpha=0.7, edgecolor="black")
+
+    plt.xlabel("Slope (mV/°C)")
+    plt.ylabel("Number of paddles")
+    #plt.title("Histogram of Temperature vs Altitude Slopes")
+
+    plt.grid(alpha=0.3)
+
+    outpath = os.path.join(args.outdir, "slope_histogram.png")
+    plt.savefig(outpath, dpi=150, bbox_inches="tight")
+    plt.close()
+
+    slopes = np.array(slopes)
+    paddles_with_slopes = np.array(paddles_with_slopes)
+
+    idx_max = np.argmax(slopes)
+    max_slope = slopes[idx_max]
+    max_paddle = paddles_with_slopes[idx_max]
+
+    idx_min = np.argmin(slopes)
+    min_slope = slopes[idx_min]
+    min_paddle = paddles_with_slopes[idx_min]
+
+    avg_slope = np.mean(slopes)
+
+    idx_avg = np.argmin(np.abs(slopes - avg_slope))
+    avg_paddle = paddles_with_slopes[idx_avg]
+    closest_avg_slope = slopes[idx_avg]
+
+    idx_zero = np.argmin(np.abs(slopes))
+    zero_paddle = paddles_with_slopes[idx_zero]
+    zero_slope = slopes[idx_zero]
+
+    print("\n===== SLOPE SUMMARY =====")
+
+    print(f"Max slope: {max_slope:.3e} ({max_slope:.3f} mV/°C) → paddle {max_paddle}")
+    print(f"Min slope: {min_slope:.3e} ({min_slope:.3f} mV/°C) → paddle {min_paddle}")
+
+    print(f"\nAverage slope: {avg_slope:.3e} ({avg_slope:.3f} mV/°C)")
+    print(f"Closest to average: {closest_avg_slope:.3e} → paddle {avg_paddle}")
+
+    print(f"\nClosest to zero slope: {zero_slope:.3e} ({zero_slope:.3f} mV/°C) → paddle {zero_paddle}")
+
+    plt.figure(figsize=(14,6))
+
+    paddle_indices = np.arange(len(paddles_with_slopes))
+
+    plt.scatter(paddle_indices, slopes, s=10)
+
+    plt.xticks(paddle_indices, paddles_with_slopes, rotation=90, fontsize=4)
+
+    plt.xlabel("Paddle")
+    plt.ylabel("Slope (mV/°C)")
+    #plt.title("Slope vs Paddle")
+
+    plt.grid(alpha=0.3)
+
+    plt.tight_layout()
+
+    outpath = os.path.join(args.outdir, "slope_vs_paddle_labeled.pdf")
+    plt.savefig(outpath)
+    plt.close()
 
     print(f"\nDone. Plots saved in: {args.outdir}")     
 
