@@ -93,6 +93,9 @@ def main():
         mask_valid = ~np.isnan(temp_vals)
         mpv_vals  = mpv_vals[mask_valid]
         temp_vals = temp_vals[mask_valid]
+        
+        mpv_edges = np.linspace(mpv_vals.min(), mpv_vals.max(), 100)
+
 
         if len(mpv_vals) == 0:
             continue
@@ -111,7 +114,7 @@ def main():
         n_temp_bins = max(n_temp_bins, 2)
         temp_edges = np.linspace(min_temp, max_temp, n_temp_bins + 1)
 
-        mpv_edges = np.linspace(mean_mpv * 0.8, mean_mpv * 1.2, 21)
+        #mpv_edges = np.linspace(mean_mpv * 0.8, mean_mpv * 1.2, 21)
         x_bins = temp_edges
         
         bin_centers = []
@@ -146,7 +149,7 @@ def main():
             h2 = d.factory.hist2d(
                 (temp_vals,
                 mpv_vals),
-                bins=(temp_edges, temp_edges*2)
+                bins=(temp_edges, mpv_edges)
             )
 
             #print(len(temp_vals), len(mpv_vals))            
@@ -160,10 +163,6 @@ def main():
                 print(f"{paddle}: no populated bins, skipping log scale")
                 h2.imshow(log=0, cmap=cmap, zorder=0)
             
-            bin_centers = []
-            means = []
-            sems = []
-        
             x_bins = temp_edges
             y_centers = 0.5 * (mpv_edges[:-1] + mpv_edges[1:])
             
