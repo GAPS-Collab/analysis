@@ -9,6 +9,10 @@ import numpy as np
 import uproot
 import gondola as go
 
+
+def paddle_sort_key(p):
+    return int(p.rstrip('A').rstrip('B'))
+
 def main():
     parser = argparse.ArgumentParser(description="Altitude vs Temperature (2D hist) per paddle")
     parser.add_argument("--mpvs", default="combined_mpv_vs_time.root", help="paddle mpv file")
@@ -36,8 +40,9 @@ def main():
     if args.paddles:
         paddles = [args.paddles]
     else:
-        paddles = sorted(df_temps["paddle"].unique())
-
+        #paddles = sorted(df_temps["paddle"].unique())
+        paddles = sorted(df_temps["paddle"].unique(), key=paddle_sort_key)
+        
     cutoff = pd.Timestamp("2025-12-20") #after gain correction
 
     slopes = []
@@ -222,10 +227,10 @@ def main():
             y_min = np.nanmin(means)
             y_max = np.nanmax(means)
             #plt.ylim(y_min - 0.1*(y_max - y_min), y_max + 0.1*(y_max - y_min))
-            #plt.ylim(y_min - 0.1, y_max + 0.1)
-            #plt.xlim(min_temp - 5, max_temp + 5)
-            plt.xlim(-50,50)
-            plt.ylim(0,2)
+            plt.ylim(y_min - 0.1, y_max + 0.1)
+            plt.xlim(min_temp - 5, max_temp + 5)
+            #plt.xlim(-50,50)
+            #plt.ylim(0,2)
             plt.legend() 
             outpath = os.path.join(args.outdir, f"profile_mpv_vs_temp_2d_{paddle}.png")
             plt.savefig(outpath, dpi=150, bbox_inches="tight")
@@ -234,9 +239,17 @@ def main():
             print(f"Histogram failed for {paddle}: {e}")
             continue
     
+    paddles_with_slopes = np.array(paddles_with_slopes)
+    slopes = np.array(slopes)
+
+    order = np.argsort([paddle_sort_key(p) for p in paddles_with_slopes])
+
+    paddles_with_slopes = paddles_with_slopes[order]
+    slopes = slopes[order]
+
     plt.figure(figsize=(8,5))
 
-    plt.hist(slopes, bins=20, alpha=0.7, edgecolor="black")
+    plt.hist(slopes, bins=50, alpha=0.7, edgecolor="black")
 
     plt.xlabel("Slope (mV/°C)")
     plt.ylabel("Number of paddles")
