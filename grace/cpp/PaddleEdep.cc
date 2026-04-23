@@ -27,34 +27,34 @@ using std::vector, std::string, std::cout, std::endl;
 using boost::format;
 
 std::vector<unsigned int> volume_ids = {
-        110000000,110000100,110000200,110000300,110000400,110000500,110000600,110000700,
-        110000800,110000900,110001000,110001100,111001100,111001000,111000900,111000800,
-        111000700,111000600,111000500,111000400,111000300,111000200,111000100,111000000,
-        112000700,112000600,112000500,112000400,112000300,112000200,112000100,112000000,
-        114000700,114000600,114000500,114000400,114000300,114000200,114000100,114000000,
-        113000700,113000600,113000500,113000400,113000300,113000200,113000100,113000000,
-        115000000,115000100,115000200,115000300,115000400,115000500,115000600,115000700,
-        116000000,116200000,116300000,116100000,
-        100000000,100000100,100000200,100000300,100000400,100000500,100000600,100000700,
-        100000800,100000900,100001000,100001100,
-        100300500,100300400,100300300,100300200,100300100,100300000,
-        100200500,100200400,100200300,100200200,100200100,100200000,
-        100400000,100400100,100400200,100400300,100400400,100400500,
-        100600500,100600400,100600300,100600200,100600100,100600000,
-        100100500,100100400,100100300,100100200,100100100,100100000,
-        100500500,100500400,100500300,100500200,100500100,100500000,
-        102000900,102000800,102000700,102000600,102000500,102000400,
-        102000300,102000200,102000100,102000000,
-        104000000,104000100,104000200,104000300,104000400,104000500,
-        104000600,104000700,104000800,104000900,
-        103000900,103000800,103000700,103000600,103000500,103000400,
-        103000300,103000200,103000100,103000000,
-        105000900,105000800,105000700,105000600,105000500,105000400,
-        105000300,105000200,105000100,105000000,
-        106000200,106000100,106000000,
-        106200000,106200100,106200200,
-        106300000,106300100,106300200,
-        106100200,106100100,106100000
+    110000000,110000100,110000200,110000300,110000400,110000500,110000600,110000700,
+    110000800,110000900,110001000,110001100,111001100,111001000,111000900,111000800,
+    111000700,111000600,111000500,111000400,111000300,111000200,111000100,111000000,
+    112000700,112000600,112000500,112000400,112000300,112000200,112000100,112000000,
+    114000700,114000600,114000500,114000400,114000300,114000200,114000100,114000000,
+    113000700,113000600,113000500,113000400,113000300,113000200,113000100,113000000,
+    115000000,115000100,115000200,115000300,115000400,115000500,115000600,115000700,
+    116000000,116200000,116300000,116100000,
+    100000000,100000100,100000200,100000300,100000400,100000500,100000600,100000700,
+    100000800,100000900,100001000,100001100,
+    100300500,100300400,100300300,100300200,100300100,100300000,
+    100200500,100200400,100200300,100200200,100200100,100200000,
+    100400000,100400100,100400200,100400300,100400400,100400500,
+    100600500,100600400,100600300,100600200,100600100,100600000,
+    100100500,100100400,100100300,100100200,100100100,100100000,
+    100500500,100500400,100500300,100500200,100500100,100500000,
+    102000900,102000800,102000700,102000600,102000500,102000400,
+    102000300,102000200,102000100,102000000,
+    104000000,104000100,104000200,104000300,104000400,104000500,
+    104000600,104000700,104000800,104000900,
+    103000900,103000800,103000700,103000600,103000500,103000400,
+    103000300,103000200,103000100,103000000,
+    105000900,105000800,105000700,105000600,105000500,105000400,
+    105000300,105000200,105000100,105000000,
+    106000200,106000100,106000000,
+    106200000,106200100,106200200,
+    106300000,106300100,106300200,
+    106100200,106100100,106100000
     };
 
 int main(int argc, char* argv[]){
@@ -90,10 +90,10 @@ int main(int argc, char* argv[]){
             name.c_str(),
             title.c_str(),
             100,        // bins
-            0.0, 25.0   // energy range (adjust if needed)
+            0.0, 25.0   // energy range
         );
 	
-	energy_hists[vid]->SetStats(0);
+	    energy_hists[vid]->SetStats(0);
         energy_hists[vid]->SetDirectory(nullptr);
         energy_hists[vid]->GetXaxis()->SetTitle("Energy Deposition [MeV]");
         energy_hists[vid]->GetYaxis()->SetTitle("Counts");
@@ -106,18 +106,26 @@ int main(int argc, char* argv[]){
 
         Instrument_Events->GetEntry(i);
 
-        const auto& energies  = Event->GetTotalEnergyDeposition();
-        const auto& volumeIds = Event->GetVolumeId();
-	const auto& triggerSources = Event->GetTriggerSources();
-	
-	//if (triggerSources.size() == 1 && triggerSources[0] != 2) continue;
+        const auto& energies        = Event->GetTotalEnergyDeposition();
+        const auto& volumeIds       = Event->GetVolumeId();
+	    const auto& triggerSources  = Event->GetTriggerSources();
+	    ///const auto& positions       = Event->
+	    //if (triggerSources.size() == 1 && triggerSources[0] != 2) continue;
 
         for (unsigned int k = 0; k < energies.size(); k++) {
 	
+            double position  = Event->
             unsigned int vid = volumeIds.at(k);
             double edep      = energies.at(k);
+	    
+            const auto& pos  = positions.at(k);
+   	        double x = pos.X();
+    	    double y = pos.Y();
+            double z = pos.Z();
 
-            if (energy_hists.count(vid)) {
+    	    std::cout << x << " " << y << " " << z << std::endl;
+	    
+	        if (energy_hists.count(vid)) {
                 energy_hists[vid]->Fill(edep);
             }
         }
@@ -129,16 +137,15 @@ int main(int argc, char* argv[]){
 	TH1D* hist = pair.second;
 	
 	if (!hist) {
-                std::cout << "  Histogram missing: " << std::endl;
-                continue;
-        }
+        std::cout << "  Histogram missing: " << std::endl;
+        continue;
+    }
 
-	
 	if (hist->GetEntries() < 10) {
 		std::cout<< "Too few entries for fit" << std::endl;
 	}
 
-        canvas->cd();
+    canvas->cd();
 	// finding FWHM
 	int maxBin = hist->GetMaximumBin();
 	double maxContent = hist->GetBinContent(maxBin);
@@ -146,13 +153,13 @@ int main(int argc, char* argv[]){
 	
 	int leftBin = maxBin;
 	while (leftBin > 1 && hist->GetBinContent(leftBin) > halfMax) {
-    		leftBin--;
+    	leftBin--;
 	}
 
 	int rightBin = maxBin;
 	int nBins = hist->GetNbinsX();
 	while (rightBin < nBins && hist->GetBinContent(rightBin) > halfMax) {
-    		rightBin++;
+    	rightBin++;
 	}
 
 	if (rightBin <= leftBin) continue; //in case fit fails it will still plot
@@ -166,7 +173,8 @@ int main(int argc, char* argv[]){
 	// initial parameters (maximum, MPV, width)
 	landauFit->SetRange(fitMin, fitMax);
 	landauFit ->SetParameters(maxContent, hist->GetBinCenter(maxBin), 0.3);
-        hist->Fit(landauFit, "RQ0", "", fitMin, fitMax);
+    landauFit->SetNpx(2000);
+	hist->Fit(landauFit, "RQ0", "", fitMin, fitMax);
 	landauFit->SetRange(0.0, 25.0);
 
 	hist->Draw();
@@ -174,33 +182,33 @@ int main(int argc, char* argv[]){
 	
 	// TPaveText
 	double entries = hist->GetEntries();
-    	double mpv     = landauFit->GetParameter(1);
-    	double width   = landauFit->GetParameter(2);
-    	double chi2    = landauFit->GetChisquare();
-    	int ndf        = landauFit->GetNDF();
+    double mpv     = landauFit->GetParameter(1);
+    double width   = landauFit->GetParameter(2);
+    double chi2    = landauFit->GetChisquare();
+    int ndf        = landauFit->GetNDF();
 
 	TPaveText* box = new TPaveText(0.6,0.65,0.88,0.88,"NDC");
-    	box->SetFillColor(0);
-    	box->SetBorderSize(1);
-	box->SetTextAlign(12);
-	box->SetTextSize(0.03);
-    	box->AddText(Form("Entries = %.0f", entries));
-   	box->AddText(Form("MPV = %.3f MeV", mpv));
-    	box->AddText(Form("Width = %.3f", width));
-    	box->AddText(Form("#chi^{2}/NDF = %.2f", chi2/ndf));
-    	box->Draw();
+    box->SetFillColor(0);
+    box->SetBorderSize(1);
+    box->SetTextAlign(12);
+    box->SetTextSize(0.03);
+    box->AddText(Form("Entries = %.0f", entries));
+    box->AddText(Form("MPV = %.3f MeV", mpv));
+    box->AddText(Form("Width = %.3f", width));
+    box->AddText(Form("#chi^{2}/NDF = %.2f", chi2/ndf));
+    box->Draw();
         
 	// save files for pdf and canvas
 	std::string pdf_name = out_path + "Edep_" + std::to_string(pair.first) + ".pdf";
-        canvas->SaveAs(pdf_name.c_str());
+    canvas->SaveAs(pdf_name.c_str());
 	
 	// save root files
 	std::string root_name = out_path + "/energy_by_volume.root";
 	TFile outfile(root_name.c_str(), "RECREATE");
 
 	for (auto& pair : energy_hists) {
-    	    pair.second->Write();   // now includes fit
-        }   
+    	pair.second->Write();   // now includes fit
+    }   
 
 	outfile.Close();
 
