@@ -8,3 +8,11 @@ wheels/
 
 # venv
 .venv
+
+*.pdf
+
+*.png
+
+*.gif
+
+*.h5
