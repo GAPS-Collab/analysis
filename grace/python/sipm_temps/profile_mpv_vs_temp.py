@@ -167,22 +167,6 @@ def main():
             sems.append(sem)
 
         try:
-            h2 = d.factory.hist2d(
-                (temp_vals,
-                mpv_vals),
-                bins=(temp_edges, mpv_edges)
-            )
-
-            #print(len(temp_vals), len(mpv_vals))            
-
-            plt.figure(figsize=(6,5))
-            
-            #h2.imshow(log=0, cmap=cmap)
-            if np.any(h2.bincontent > 0):
-                h2.imshow(log=0, cmap=cmap, zorder=0)
-            else:
-                print(f"{paddle}: no populated bins, skipping log scale")
-                h2.imshow(log=0, cmap=cmap, zorder=0)
             
             x_bins = temp_edges
             y_centers = 0.5 * (mpv_edges[:-1] + mpv_edges[1:])
@@ -210,22 +194,42 @@ def main():
             slopes.append(slope)
             slope_errs.append(slope_err)
             paddles_with_slopes.append(paddle)
-
+            
+            mpv_25 = slope*25 + intercept
+            means_norm    = np.array(means) / mpv_25
+            sems_norm     = np.array(sems)  / mpv_25
+            mpv_norm = mpv_vals/mpv_25
 
             x_line = np.linspace(x_fit.min(), x_fit.max(), 200)
             y_line = slope * x_line + intercept
-    
+            y_line_norm = y_line / mpv_25
 
+            h2 = d.factory.hist2d(
+                (temp_vals,
+                mpv_norm),
+                bins=(temp_edges, mpv_edges)
+            )
+
+            #print(len(temp_vals), len(mpv_vals))            
+
+            plt.figure(figsize=(6,5))
+            
+            #h2.imshow(log=0, cmap=cmap)
+            if np.any(h2.bincontent > 0):
+                h2.imshow(log=0, cmap=cmap, zorder=0)
+            else:
+                print(f"{paddle}: no populated bins, skipping log scale")
+                h2.imshow(log=0, cmap=cmap, zorder=0)
             cb = plt.colorbar()
-            plt.plot(x_line,y_line,color='#aa0066',linewidth=1,label=f"slope = {slope:.2e} ± {slope_err:.1e}",zorder=10)
-            plt.errorbar(bin_centers,means,yerr=sems,fmt='o',color='xkcd:neon pink',markersize=2,label="Mean ± SEM",zorder=11)
+            plt.plot(x_line,y_line_norm,color='#aa0066',linewidth=1,label=f"slope = {slope:.2e} ± {slope_err:.1e}",zorder=10)
+            plt.errorbar(bin_centers,means_norm,yerr=sems,fmt='o',color='xkcd:neon pink',markersize=2,label="Mean ± SEM",zorder=11)
             plt.xlabel("Temperature")
-            plt.ylabel("MPV")
+            plt.ylabel("MPV / MPV_25")
             plt.title(f"MPV vs Temperature ({paddle})")
             plt.grid(alpha=0.3)
             
-            y_min = np.nanmin(means)
-            y_max = np.nanmax(means)
+            y_min = np.nanmin(means_norm)
+            y_max = np.nanmax(means_norm)
             #plt.ylim(y_min - 0.1*(y_max - y_min), y_max + 0.1*(y_max - y_min))
             plt.ylim(y_min - 0.1, y_max + 0.1)
             plt.xlim(min_temp - 5, max_temp + 5)

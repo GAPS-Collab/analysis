@@ -26,6 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('-id', '--run_id', type=str, help = 'TOF run id' )
 
     args = parser.parse_args()
+    print('parsed args!')
 
     MERGED_EVENT_TYPES     = [\
     "TelemetryPacketType.NoGapsTriggerEvent",
@@ -34,11 +35,20 @@ if __name__ == '__main__':
     "TelemetryPacketType.NoTofDataEvent"]
 
     files = Path(f'{args.data_dir}').glob('*.gaps')
+    print('loaded files!')
 
     reader = go.io.CRReader('/data1/nextcloud/cra_data/data/2024/processed/L0/9113') 
     for frame in reader:
-        if frame.has('PacketType.RBMoniData'):
+        n = 0
+        if frame.has('PacketType.AnyTrackerHK'):
+            n += 1
+            '''
             tp   = frame.get_tofpacket('PacketType.RBMoniData') 
             moni = go.tof.monitoring.RBMoniData()
             moni.from_tofpacket(tp)
-            print (moni)
+            humidity = moni.humidity
+
+            print (humidity)
+            '''
+        if n != 0: print(n)
+

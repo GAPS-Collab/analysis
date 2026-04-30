@@ -109,21 +109,11 @@ int main(int argc, char* argv[]){
         const auto& energies        = Event->GetTotalEnergyDeposition();
         const auto& volumeIds       = Event->GetVolumeId();
 	    const auto& triggerSources  = Event->GetTriggerSources();
-	    ///const auto& positions       = Event->
-	    //if (triggerSources.size() == 1 && triggerSources[0] != 2) continue;
 
         for (unsigned int k = 0; k < energies.size(); k++) {
 	
-            double position  = Event->
             unsigned int vid = volumeIds.at(k);
             double edep      = energies.at(k);
-	    
-            const auto& pos  = positions.at(k);
-   	        double x = pos.X();
-    	    double y = pos.Y();
-            double z = pos.Z();
-
-    	    std::cout << x << " " << y << " " << z << std::endl;
 	    
 	        if (energy_hists.count(vid)) {
                 energy_hists[vid]->Fill(edep);
