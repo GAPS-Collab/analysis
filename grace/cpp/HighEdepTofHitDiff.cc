@@ -9,6 +9,12 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 
+/*
+A script which reads in reconstructed hits for TOF and Tracker, and if the TOF hit is within a set window,
+computes the differnce between the highest valued TOF hit in the event and the highest valued Tracker hit
+in the event. Produces a TH1D of the difference called high_edep_tof_trk.pdf
+*/
+
 using std::vector, std::string, std::cout, std::endl;
 
 int main(int argc, char* argv[]){
