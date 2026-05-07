@@ -24,7 +24,7 @@ rows = []
 for idx, file in enumerate(tqdm(files)):
     pos_moni_data.add_telemetryfile(file)
     
-    t_1 = pos_moni_data.get_first_ts
+    t_1 = pos_moni_data.first_ts
     print(t_1)
     
     df = pos_moni_data.get_dataframe()
