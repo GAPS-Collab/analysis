@@ -11,8 +11,7 @@
 
 /*
 A script which reads in reconstructed hits for TOF and Tracker, and if the TOF hit is within a set window,
-computes the differnce between the highest valued TOF hit in the event and the highest valued Tracker hit
-in the event. Produces a TH1D of the difference called high_edep_tof_trk.pdf
+adds the highest Edep tracker hit Edep value to a TH1D. Produces a pdf called high_edep_tof_trk_dist.pdf
 */
 
 using std::vector, std::string, std::cout, std::endl;
@@ -40,8 +39,8 @@ int main(int argc, char* argv[]){
     if (out_path.back() != '/')
     out_path += "/";
 
-    TH1D* h_diff = new TH1D("h_diff", "TOF - Tracker Max Energy;E_{TOF} - E_{TRK} [MeV];Counts", 
-                       100, -100, 100);
+    TH1D* h_diff = new TH1D("h_diff", "Tracker Edep when TOF Edep >= 20.0; E_{TRK} [MeV];Counts", 
+                       100, -10, 100);
 
     std::cout << "analyzing..." << std::endl;
 
@@ -79,12 +78,8 @@ int main(int argc, char* argv[]){
         // if (tof_in_range && !trk_edep.empty()) {
         //     auto max_it = std::max_element(trk_edep.begin(), trk_edep.end());
         //     double max_tracker_edep = *max_it;
-            
-        //     auto max_id = std::max_element(tof_edep.begin(), tof_edep.end());
-        //     double max_tof_edep = *max_id;
 
-        //     double diff_tof_trk = max_tof_edep - max_tracker_edep;
-        //     h_diff->Fill(diff_tof_trk);
+        //     h_diff->Fill(max_tracker_edep);
         // }   
 
         if (tof_in_range) {
@@ -92,17 +87,10 @@ int main(int argc, char* argv[]){
                 auto max_it = std::max_element(trk_edep.begin(), trk_edep.end());
                 double max_tracker_edep = *max_it;
 
-                auto max_id = std::max_element(tof_edep.begin(), tof_edep.end());
-                double max_tof_edep = *max_id;
-
-                double diff_tof_trk = max_tof_edep - max_tracker_edep;
-                h_diff->Fill(diff_tof_trk);
+                h_diff->Fill(max_tracker_edep);
             }
             else {
-                auto max_id = std::max_element(tof_edep.begin(), tof_edep.end());
-                double max_tof_edep = *max_id;
-                
-                h_diff->Fill(max_tof_edep);
+                h_diff->Fill(0.0);
             }
         }
         tof_edep.clear();
@@ -110,12 +98,8 @@ int main(int argc, char* argv[]){
     }
     TCanvas* c1 = new TCanvas("c","c",800,600);
     c1->cd();
-    h_diff->GetXaxis()->SetRangeUser(-100.0, 30.0);
-    gStyle->SetStatY(0.875);
-    gStyle->SetStatX(0.35);
     h_diff->Draw();
-    gPad->Update();
     
-    std::string pdf_name = out_path + "high_edep_tof_trk.pdf";
+    std::string pdf_name = out_path + "high_edep_tof_trk_dist.pdf";
     c1->SaveAs(pdf_name.c_str());
 } 
