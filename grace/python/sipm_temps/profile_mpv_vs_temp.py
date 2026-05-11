@@ -31,19 +31,23 @@ def main():
 
     f = uproot.open(args.mpvs)
     df_temps = pd.read_hdf(args.temps)
+
+    # make new dataframe where A and B side temperature data is averaged and the paddle just represents the whole paddle, not individual sides
+    df_temps["paddle_base"] = df_temps["paddle"].str[:-1]
+    df_avg = (df_temps.groupby(["paddle_base", "timestamp"], as_index=False)["temp"].mean())
     
+    df_avg = df_avg.rename(columns={"paddle_base": "paddle"})
+
     # convert unix to HR time
     start_unix = 1765793920
     start_time = pd.to_datetime(start_unix, unit="s")
-    df_temps["time_real"] = start_time + pd.to_timedelta(
-        df_temps["timestamp"], unit="s"
-    )
+    df_avg["time_real"] = start_time + pd.to_timedelta(df_avg["timestamp"], unit="s") # use df_avg since it has the averaged timestamps
     
     if args.paddles:
         paddles = [args.paddles]
     else:
-        #paddles = sorted(df_temps["paddle"].unique())
-        paddles = sorted(df_temps["paddle"].unique(), key=paddle_sort_key)
+        #paddles = sorted(df_temps["paddle"].unique(), key=paddle_sort_key)
+        paddles = sorted(df_avg["paddle"].unique())
         
     cutoff = pd.Timestamp("2025-12-20") #after gain correction
 
@@ -54,10 +58,11 @@ def main():
     mpv_cal = []    
 
     for paddle in paddles:
-
+        print(type(paddle))
         print(f"Processing {paddle}")
         
-        vid = paddle_vid_map[int(paddle.rstrip('A').rstrip('B'))]
+        #vid = paddle_vid_map[int(paddle.rstrip('A').rstrip('B'))]
+        vid = paddle_vid_map[int(paddle)]
         if vid >= 2000000000: continue
 
         gr_name = f"volumes/mpv_vs_time_vol_{vid}"
@@ -74,8 +79,8 @@ def main():
 
         time_mpv = pd.to_datetime(x_mpv, unit="s")
         time_mpv_series = pd.to_datetime(time_mpv)
-
-        df_paddle = df_temps[df_temps["paddle"] == paddle].copy()
+        
+        df_paddle = df_avg[df_avg["paddle"] == paddle].copy() # use df_avg since it has the averaged timestamps
 
         if len(df_paddle) == 0:
             print(f'not enough temperature data for the paddle {paddle}')
@@ -232,7 +237,7 @@ def main():
 
             h2 = d.factory.hist2d(
                 (temp_vals,
-                mpv_corrected),
+                mpv_vals),
                 bins=(temp_edges, mpv_edges)
             )            
 
