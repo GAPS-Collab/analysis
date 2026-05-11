@@ -4,7 +4,10 @@ from tqdm import tqdm
 import pylandau
 import numpy as np
 from scipy.optimize import curve_fit
+'''
+this script produces a histogram of hits on a particular paddle in a particular time window, it was used to test the need for a cut on hit position to accurately record energy deposition. it was found that it didn't make much of a difference
 
+'''
 def landau_model(x, A, mpv, eta):
     return A * pylandau.landau(x, mpv, eta)
 
