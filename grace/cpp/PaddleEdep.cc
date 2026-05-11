@@ -114,9 +114,13 @@ int main(int argc, char* argv[]){
 	
             unsigned int vid = volumeIds.at(k);
             double edep      = energies.at(k);
-	    
+            
+            if (vid != 110000100) continue; // testing energy correction to paddle 2
+
+            double edep_corrected = edep * 0.9764; // correction factor for paddle 2 from MPV calibration
+
 	        if (energy_hists.count(vid)) {
-                energy_hists[vid]->Fill(edep);
+                energy_hists[vid]->Fill(edep_corrected);
             }
         }
     }
@@ -193,7 +197,7 @@ int main(int argc, char* argv[]){
     canvas->SaveAs(pdf_name.c_str());
 	
 	// save root files
-	std::string root_name = out_path + "/energy_by_volume.root";
+	std::string root_name = out_path + "/energy_by_volume_corrected.root";
 	TFile outfile(root_name.c_str(), "RECREATE");
 
 	for (auto& pair : energy_hists) {
