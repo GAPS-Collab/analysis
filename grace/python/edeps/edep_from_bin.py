@@ -23,13 +23,17 @@ for file in tqdm(files):
     for packet in reader: 
         if not packet.is_event_packet: continue
         gcu_time = packet.header.gcutime
+        try: 
+            event=go.events.TelemetryEvent.from_telemetrypacket(packet)
+        
+        except Exception: continue
 
-        event=go.events.TelemetryEvent.from_telemetrypacket(packet)
         tof_event = event.tof
 
         for hit in tof_event.hits:
             pid = hit.paddle_id
-                
+            if pid not in buffers: continue
+
             pos = hit.pos
             if pos < 600 or pos > 1200: continue
 
