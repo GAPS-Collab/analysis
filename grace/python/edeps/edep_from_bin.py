@@ -10,7 +10,7 @@ This script will produce a binary file with energy depositions and corresponding
 binary_path = '/data1/nextcloud/cra_data/data/binaries_berkeley/gcu_2_gcupool/'
 files = (sorted(glob(binary_path + '*.bin')))
 
-outdir = 'paddle_data'
+outdir = '/data/gtytus/flight_energy'
 
 FLUSH_SIZE = 50000
 
