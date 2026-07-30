@@ -16,7 +16,6 @@ using std::endl;
 
 
 int main(int argc, char* argv[]) {
-
     std::ifstream infile("/home/gtytus/analysis/grace/cpp/build/26.03_files.txt");
     std::string fname;
     int n_files = 0;
@@ -25,7 +24,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Failed to open root_files.txt" << std::endl;
         return 1;
     }
-
     TFile* fout = new TFile("track_edep.root", "RECREATE", "", 4);
     TTree* tree = new TTree("tracks", "Selected track hit information");
 
@@ -41,7 +39,7 @@ int main(int argc, char* argv[]) {
 
     TChain* Instrument_Events = new TChain("TreeRec");
     Instrument_Events->SetAutoDelete(true);
-    CEventRec* Event = new CEventRec;
+    CEventRec* Event = nullptr;
     Instrument_Events->SetBranchAddress("Rec", &Event);
 
     while (std::getline(infile, fname)) {
@@ -55,9 +53,17 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Starting event loop over "<< nentries << " entries" << endl;
 
-    
     for (size_t i = 0; i < nentries; i++) {
         Instrument_Events->GetEntry(i);
+
+        if (i == 0)
+            std::cout << "About to read first entry" << std::endl;
+
+        Instrument_Events->GetEntry(i);
+
+        if (i == 0) {
+            std::cout << "First entry read successfully" << std::endl;
+        }
 
         if (i % 100000 == 0) {
             cout << i << " / " << nentries << endl;
@@ -72,7 +78,6 @@ int main(int argc, char* argv[]) {
         bool hasFindPrimary = false;
 
         for (const auto& type : Event->ListAvailableReconstructions()) {
-            std::cout << "Available reconstruction: " << type << std::endl;
             if (type == "FindPrimary") {
                 hasFindPrimary = true;
                 break;
@@ -101,6 +106,7 @@ int main(int argc, char* argv[]) {
             continue;
 
         const auto& volids = primaryTrack->GetVolumeId();
+
 
         bool has_inner = false;
         bool has_outer = false;
@@ -134,12 +140,57 @@ int main(int argc, char* argv[]) {
         const auto& track_edeps = primaryTrack->GetEnergyDeposition();
         const auto& track_steps = primaryTrack->GetStepLength();
 
+        if (volids.size() != track_edeps.size() ||
+            volids.size() != track_steps.size()) {
+        
+            std::cerr << "Size mismatch!\n";
+            std::cerr << "volids = " << volids.size()
+                    << " edeps = " << track_edeps.size()
+                    << " steps = " << track_steps.size()
+                    << std::endl;
+            continue;
+        }
+
+
         for (size_t k = 0; k < volids.size(); k++) {
+
+            const double tof_thickness = 0.635; //cm
+            const double tracker_thickness = 0.23; //cm
+
             if (!GGeometryObject::IsTofVolume(volids[k]))
                 continue;
 
+            if(GGeometryObject::IsUmbrellaVolume(volids[k])) {
+                if(GGeometryObject::IsCortinaVolume(volids[k])) {
+                    if(Event->GetPrimaryBeta() > 0.8 && Event->GetPrimaryBeta() < 1.2) step_length = tof_thickness / sqrt(1-pow(Event->GetPrimaryMomentumDirection().CosTheta(),2)); //cortina side panels
+                }
+
+                else {
+                    if(Event->GetPrimaryBeta() > 0.8 && Event->GetPrimaryBeta() < 1.2) step_length = tof_thickness / fabs(Event->GetPrimaryMomentumDirection().CosTheta()); //umbrella panels
+                }
+            }
+
+            else if(GGeometryObject::IsCubeVolume(volids[k])) {
+                int Face = GGeometryObject::GetTofFace(volids[k]);
+                if(Face == 0 || Face == 1) { //cube top and bot
+                    if(Event->GetPrimaryBeta() > 0.8 && Event->GetPrimaryBeta() < 1.2) step_length = tof_thickness / fabs(Event->GetPrimaryMomentumDirection().CosTheta());
+                }
+
+                else if(Face == 2 || Face == 3) { //cube front and back
+                    if(Event->GetPrimaryBeta() > 0.8 && Event->GetPrimaryBeta() < 1.2) step_length = tof_thickness / sqrt(1-pow(Event->GetPrimaryMomentumDirection().CosTheta(),2));
+                }
+
+                else if(Face == 4 || Face == 5) { //cube left and right
+                    if(Event->GetPrimaryBeta() > 0.8 && Event->GetPrimaryBeta() < 1.2) step_length = tof_thickness / sqrt(1-pow(Event->GetPrimaryMomentumDirection().CosTheta(),2));
+                }
+            }
+
+            ///else {
+                ///if(Event->GetPrimaryBeta() > 0.8 && Event->GetPrimaryBeta() < 1.2) step_length = tracker_thickness / fabs(Event->GetPrimaryMomentumDirection().CosTheta());
+            ///}
+
             edep = track_edeps[k];
-            step_length = track_steps[k];
+            //step_length = track_steps[k];
             volume_id = volids[k];
         
             tree->Fill();
