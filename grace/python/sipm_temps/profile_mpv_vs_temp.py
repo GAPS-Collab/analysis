@@ -21,6 +21,8 @@ def main():
     parser.add_argument('--paddles', required=False, help="list of paddles to plot")
     args = parser.parse_args()
 
+    print("ARGS PARSED")
+
     os.makedirs(args.outdir, exist_ok=True)
     
     d.visual()
@@ -29,19 +31,23 @@ def main():
 
     f = uproot.open(args.mpvs)
     df_temps = pd.read_hdf(args.temps)
+
+    # make new dataframe where A and B side temperature data is averaged and the paddle just represents the whole paddle, not individual sides
+    df_temps["paddle_base"] = df_temps["paddle"].str[:-1]
+    df_avg = (df_temps.groupby(["paddle_base", "timestamp"], as_index=False)["temp"].mean())
     
+    df_avg = df_avg.rename(columns={"paddle_base": "paddle"})
+
     # convert unix to HR time
     start_unix = 1765793920
     start_time = pd.to_datetime(start_unix, unit="s")
-    df_temps["time_real"] = start_time + pd.to_timedelta(
-        df_temps["timestamp"], unit="s"
-    )
+    df_avg["time_real"] = start_time + pd.to_timedelta(df_avg["timestamp"], unit="s") # use df_avg since it has the averaged timestamps
     
     if args.paddles:
         paddles = [args.paddles]
     else:
-        #paddles = sorted(df_temps["paddle"].unique())
-        paddles = sorted(df_temps["paddle"].unique(), key=paddle_sort_key)
+        #paddles = sorted(df_temps["paddle"].unique(), key=paddle_sort_key)
+        paddles = sorted(df_avg["paddle"].unique())
         
     cutoff = pd.Timestamp("2025-12-20") #after gain correction
 
@@ -49,11 +55,14 @@ def main():
     slope_errs = []
     paddles_with_slopes = []
 
-    for paddle in paddles:
+    mpv_cal = []    
 
+    for paddle in paddles:
+        print(type(paddle))
         print(f"Processing {paddle}")
         
-        vid = paddle_vid_map[int(paddle.rstrip('A').rstrip('B'))]
+        #vid = paddle_vid_map[int(paddle.rstrip('A').rstrip('B'))]
+        vid = paddle_vid_map[int(paddle)]
         if vid >= 2000000000: continue
 
         gr_name = f"volumes/mpv_vs_time_vol_{vid}"
@@ -70,10 +79,11 @@ def main():
 
         time_mpv = pd.to_datetime(x_mpv, unit="s")
         time_mpv_series = pd.to_datetime(time_mpv)
-
-        df_paddle = df_temps[df_temps["paddle"] == paddle].copy()
+        
+        df_paddle = df_avg[df_avg["paddle"] == paddle].copy() # use df_avg since it has the averaged timestamps
 
         if len(df_paddle) == 0:
+            print(f'not enough temperature data for the paddle {paddle}')
             continue
 
         df_paddle["time_bin"] = df_paddle["time_real"].dt.floor("1h")
@@ -99,25 +109,12 @@ def main():
 
         mpv_vals  = y_mpv[mask]
         temp_vals = temp_matched[mask]
+        time_vals = time_mpv_series[mask]
 
-        #mask_late = time_mpv_series >= cutoff
-
-        #mpv_vals  = y_mpv[mask_late]
-        #temp_vals = temp_matched[mask_late]
-
-        #mask_valid = ~np.isnan(temp_vals) & (~np.isnan(mpv_vals))
-        #mpv_vals  = mpv_vals[mask_valid]
-        #temp_vals = temp_vals[mask_valid]
-        #
-        #mask_mpv = mpv_vals >= 0.1
-        #mpv_vals  = mpv_vals[mask_mpv]
-        #temp_vals = temp_vals[mask_mpv]
-
-
-        #mpv_edges = np.linspace(mpv_vals.min(), mpv_vals.max(), 100)
         mpv_edges = np.linspace(0,2,100)
 
         if len(mpv_vals) == 0:
+            print("not enough mpv values")
             continue
 
         max_temp = float(temp_vals.max())
@@ -167,22 +164,6 @@ def main():
             sems.append(sem)
 
         try:
-            h2 = d.factory.hist2d(
-                (temp_vals,
-                mpv_vals),
-                bins=(temp_edges, mpv_edges)
-            )
-
-            #print(len(temp_vals), len(mpv_vals))            
-
-            plt.figure(figsize=(6,5))
-            
-            #h2.imshow(log=0, cmap=cmap)
-            if np.any(h2.bincontent > 0):
-                h2.imshow(log=0, cmap=cmap, zorder=0)
-            else:
-                print(f"{paddle}: no populated bins, skipping log scale")
-                h2.imshow(log=0, cmap=cmap, zorder=0)
             
             x_bins = temp_edges
             y_centers = 0.5 * (mpv_edges[:-1] + mpv_edges[1:])
@@ -210,22 +191,74 @@ def main():
             slopes.append(slope)
             slope_errs.append(slope_err)
             paddles_with_slopes.append(paddle)
-
-
+        
             x_line = np.linspace(x_fit.min(), x_fit.max(), 200)
             y_line = slope * x_line + intercept
-    
 
+            ## apply correction??
+
+            T_set = -10
+
+            #mpv_corrected = mpv_vals - slope * (temp_vals - T_set)
+
+            mpv_corrected = []
+        
+            for i in range(len(mpv_vals)):
+                T_current = temp_vals[i]
+                MPV_current = slope*T_current + intercept
+
+                MPV_set = MPV_current - slope * (T_current - T_set)
+                #mpv_vals[i] = MPV_set
+
+                mpv_corrected.append(MPV_set)
+            
+            mpv_cal.append(MPV_set) #purposely want 1 value per paddle, so take the last one (most recent)
+
+            plt.figure(figsize=(8,4))
+
+            plt.plot(time_vals, mpv_corrected, '.', markersize=2, label="Calibrated MPV")
+            plt.plot(time_vals, mpv_vals, '.', markersize=2, alpha=0.4, label="Original")
+
+            plt.xlabel("Time")
+            plt.ylabel(f"MPV corrected to {T_set}°C")
+            plt.title(f"MPV vs Time (calibrated) — {paddle}")
+            plt.grid(alpha=0.3)
+            plt.legend()
+
+            outpath = os.path.join(args.outdir, f"mpv_vs_time_calibrated_{paddle}.png")
+            plt.savefig(outpath, dpi=150, bbox_inches="tight")
+            plt.close()
+
+            if mpv_corrected[-1] >=3.0:
+                print(f"Warning: corrected MPV for {paddle} is very high: {mpv_corrected[-1]:.2f} MeV")
+            
+            # mpv_median = np.median(mpv_corrected)
+            # mpv_cal.append(mpv_median)
+
+            h2 = d.factory.hist2d(
+                (temp_vals,
+                mpv_vals),
+                bins=(temp_edges, mpv_edges)
+            )            
+
+            plt.figure(figsize=(6,5))
+            
+            #h2.imshow(log=0, cmap=cmap)
+            if np.any(h2.bincontent > 0):
+                h2.imshow(log=0, cmap=cmap, zorder=0)
+            else:
+                print(f"{paddle}: no populated bins, skipping log scale")
+                h2.imshow(log=0, cmap=cmap, zorder=0)
             cb = plt.colorbar()
-            plt.plot(x_line,y_line,color='#aa0066',linewidth=1,label=f"slope = {slope:.2e} ± {slope_err:.1e}",zorder=10)
+            plt.plot(x_line,y_line,color='#aa0066',linewidth=1,label=f"M(T) = ({slope:.2e} ± {slope_err:.1e})T + {intercept:.2e}",zorder=10)
             plt.errorbar(bin_centers,means,yerr=sems,fmt='o',color='xkcd:neon pink',markersize=2,label="Mean ± SEM",zorder=11)
             plt.xlabel("Temperature")
             plt.ylabel("MPV")
             plt.title(f"MPV vs Temperature ({paddle})")
             plt.grid(alpha=0.3)
             
-            y_min = np.nanmin(means)
-            y_max = np.nanmax(means)
+            y_min = np.nanmin(mpv_corrected)
+            y_max = np.nanmax(mpv_corrected)
             #plt.ylim(y_min - 0.1*(y_max - y_min), y_max + 0.1*(y_max - y_min))
             plt.ylim(y_min - 0.1, y_max + 0.1)
             plt.xlim(min_temp - 5, max_temp + 5)
@@ -235,6 +268,7 @@ def main():
             outpath = os.path.join(args.outdir, f"profile_mpv_vs_temp_2d_{paddle}.png")
             plt.savefig(outpath, dpi=150, bbox_inches="tight")
             plt.close()
+            print(len(mpv_cal))
         except Exception as e:
             print(f"Histogram failed for {paddle}: {e}")
             continue
@@ -251,7 +285,7 @@ def main():
 
     plt.hist(slopes, bins=50, alpha=0.7, edgecolor="black")
 
-    plt.xlabel("Slope (mV/°C)")
+    plt.xlabel("Slope (MeV/°C)")
     plt.ylabel("Number of paddles")
     #plt.title("Histogram of Temperature vs Altitude Slopes")
 
@@ -260,6 +294,16 @@ def main():
     outpath = os.path.join(args.outdir, "slope_histogram.png")
     plt.savefig(outpath, dpi=150, bbox_inches="tight")
     plt.close()
+
+    plt.figure(figsize=(8,5))
+    plt.hist(mpv_cal, bins=200, alpha=0.7, edgecolor="black")
+    plt.xlabel("Calibrated MPV at -10°C [MeV]")
+    plt.ylabel("Number of paddles")
+    plt.xlim(0,3)
+    plt.grid(alpha=0.3)
+    outpath = os.path.join(args.outdir, "mpv_calibrated_histogram.png")
+    plt.savefig(outpath, dpi=150, bbox_inches="tight")
+    plt.close() 
 
     slopes = np.array(slopes)
     paddles_with_slopes = np.array(paddles_with_slopes)

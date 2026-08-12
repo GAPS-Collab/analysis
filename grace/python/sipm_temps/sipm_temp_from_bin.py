@@ -41,7 +41,7 @@ for file in tqdm(files):
     
 
     df = pa_moni_data.get_dataframe()
-    print(file, len(df), pa_moni_data.get_first_ts)
+    print(file, len(df), pa_moni_data.first_ts)
 
 
     for x in range(len(df)):

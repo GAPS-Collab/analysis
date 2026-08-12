@@ -22,4 +22,6 @@ src/
 # txt files from outputs
 *.txt
 
-# gitignore 
+# gitignore
+
+*.condor
