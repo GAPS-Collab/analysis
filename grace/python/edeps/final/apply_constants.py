@@ -179,7 +179,7 @@ plt.xlim(0, 20)
 plt.yscale("log")
 plt.legend()
 plt.tight_layout()
-plt.savefig("a_42.png", dpi=150)
+plt.savefig(f"dEdx_paddle_{paddle_num}.png", dpi=150)
 plt.close()
 
 
