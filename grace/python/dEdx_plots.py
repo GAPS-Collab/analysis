@@ -52,6 +52,8 @@ avg_temp = (
 
 df["timestamp"] = df["timestamp"].astype("int64")
 
+calibration_results = []
+
 ## start loop here
 
 for j in range (0, 160):
@@ -78,6 +80,9 @@ for j in range (0, 160):
     merged = merged.dropna(subset=["temp", "dedx"])
     
     merged = merged[merged['edep']> 0.0001]
+    if len(merged) == 0:
+        print(f"WARNING: paddle {j + 1} has no usable data -- skipping")
+        continue
     
     temp_bins = 80
     edep_bins = 800
@@ -179,8 +184,17 @@ for j in range (0, 160):
     valid = H.max(axis=1) > 0
     
     fit_mask = (valid & (H.max(axis=1) > 20))
+    if np.count_nonzero(fit_mask) < 2:
+        print(
+            f"WARNING: paddle {j + 1} does not have enough data "
+            f"for a temperature fit -- skipping"
+        )
+        continue
     
     m, b = np.polyfit(temp_centers[fit_mask], mpv_edep[fit_mask], 1)
+    
+    m_uncal = m
+    b_uncal = b
     
     xfit = np.linspace(temp_centers[valid].min(), temp_centers[valid].max(),100)
     
@@ -203,6 +217,7 @@ for j in range (0, 160):
     #plt.show()
     plt.savefig(f"edeps/final/uncalibrated_p{j + 1}.png", dpi=150)
     print(f"saved uncalibrated_p{j + 1}.png")
+    plt.close()
     
     ## onto the calibration for T
     T_ref = np.average(dt_paddle["temp"])
@@ -351,7 +366,7 @@ for j in range (0, 160):
     plt.legend()
     plt.savefig(f"edeps/final/calibrated_p{j + 1}.png", dpi=150)
     print(f"saved calibrated_p{j + 1}.png")
-    
+    plt.close()
     
     ## final plot
     # ============================================================
@@ -915,3 +930,22 @@ for j in range (0, 160):
     plt.legend()
     plt.tight_layout()
     plt.savefig(f"edeps/final/final_dEdx_dist_p{j + 1}.png", dpi=150)
+    plt.close()
+    
+    calibration_results.append({
+    "paddle": j + 1,
+    "slope": m_uncal,
+    "y_intercept": b_uncal,
+    "T_avg": T_ref,
+    "measured_mip": measured_mip,
+    "normalization_coeff": coeff
+    })
+    
+calibration_df = pd.DataFrame(calibration_results)
+
+calibration_df.to_csv(
+    "edeps/final/paddle_calibrations.csv",
+    index=False
+)
+
+print("Saved calibration constants to edeps/final/paddle_calibrations.csv")
