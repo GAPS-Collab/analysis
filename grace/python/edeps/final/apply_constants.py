@@ -96,7 +96,7 @@ Otherwise, this is where the loop would begin!
 # The maximum tolerance is 30seconds, but because we have chosen direction="nearest", it is likely usually much closer
 #
 # If you just similarly group and store the temperature in every event, that would certainly be faster!
-paddle_num = 68
+paddle_num = 42
 paddle_temps = db_paddle_temps[db_paddle_temps["paddle_num"] == paddle_num]
 paddle_edeps = db_edeps[db_edeps["volume_id"] == tof_map[paddle_num]]
 
